@@ -62,8 +62,6 @@
     .cta button{background:#1d3b24;border-color:#2b6c3e}
   </style>
 
-  <!-- STABIL SKANNER: html5-qrcode -->
-  <script defer src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
   <!-- jsPDF + autoTable för PDF-rapport -->
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
@@ -73,7 +71,7 @@
     <h1>📦 Offert På Språng – Inventeringsapp</h1>
   </header>
 
-  <!-- KNAPPARNA flyttade NER under rubriken -->
+  <!-- Knappar under rubriken -->
   <div class="wrap">
     <div class="row card">
       <div class="toolbar">
@@ -153,7 +151,6 @@
   <dialog id="dlg-scan" style="max-width:900px;width:96%;border:none;border-radius:14px;padding:0;background:#0b0f17;color:#fff">
     <div class="card" style="border:none">
       <h3 style="margin-top:0">📷 Skanna streckkod</h3>
-      <!-- html5-qrcode renderas in i denna DIV -->
       <div id="scan-box" style="width:100%;max-height:60vh"></div>
       <div class="row">
         <div class="actions">
@@ -280,23 +277,42 @@
       save();
     }
 
-    // ---------- Skanning med html5-qrcode ----------
+    // ---------- Skanning (html5-qrcode med dynamisk loader) ----------
     const dlgScan = document.getElementById('dlg-scan');
     const scanBox = document.getElementById('scan-box');
     const scanStatus = document.getElementById('scan-status');
     let scanner = null;
 
+    async function ensureHtml5Qrcode() {
+      if (window.Html5Qrcode) return;
+      const srcs = [
+        "https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.10/minified/html5-qrcode.min.js",
+        "https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"
+      ];
+      for (const src of srcs) {
+        try {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement("script");
+            s.src = src; s.async = true;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error("load failed"));
+            document.head.appendChild(s);
+          });
+          if (window.Html5Qrcode) return;
+        } catch(_) {}
+      }
+      throw new Error("Skannerbiblioteket kunde inte laddas (html5-qrcode).");
+    }
+
     async function startScan(){
       try{
-        if (!window.Html5Qrcode) throw new Error('Skannerbiblioteket har inte laddats (html5-qrcode).');
+        await ensureHtml5Qrcode();
 
         dlgScan.showModal();
         scanStatus.textContent = 'Startar kamera…';
 
-        // Skapa scanner
         scanner = new Html5Qrcode("scan-box", { verbose: false });
 
-        // Lista kameror
         const cameras = await Html5Qrcode.getCameras();
         const back = cameras.find(c => /back|rear|environment/i.test(c.label)) || cameras[0];
         if (!back) throw new Error('Ingen kamera hittades.');
@@ -304,8 +320,7 @@
         await scanner.start(
           back.id,
           { fps: 10, qrbox: 250, aspectRatio: 1.777, facingMode: "environment" },
-          (decodedText/*, decodedResult*/) => {
-            // Fångad kod
+          (decodedText) => {
             stopScan();
             openAdd({ code: decodedText, name:'', qty:1, location:'', note:'' });
           },
@@ -416,7 +431,7 @@
         img.src = src;
       });
     }
-    function mm(px){ return px * 0.75; }
+    function mm(px){ return px * 0.75; } // px -> pt (ungefär)
 
     async function exportPDF(){
       const { jsPDF } = window.jspdf || {};
@@ -492,6 +507,7 @@
         }
       });
 
+      // Summering per plats
       const totalsByLocation = new Map();
       for (const r of rows){
         const key = (r.location || '—').trim() || '—';
