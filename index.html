@@ -14,9 +14,12 @@
   <meta name="apple-mobile-web-app-title" content="Inventeringsapp">
   <link rel="apple-touch-icon" href="Icon-512.png" />
 
-  <!-- html5-qrcode för streckkodsskanning (ladda tidigt) -->
-  <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
-  <!-- jsPDF + autoTable för PDF-rapport -->
+  <!-- html5-qrcode med automatisk fallback -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"
+    onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js';document.head.appendChild(s);}())">
+  </script>
+  <!-- jsPDF + autoTable -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
 
@@ -133,7 +136,7 @@
     </details>
   </div>
 
-  <!-- Banner-reklam (byt länken när Play-länken finns) -->
+  <!-- Banner-reklam -->
   <div class="promo">
     <div class="promo-inner">
       <div class="logo-dot"></div>
@@ -285,6 +288,8 @@
 
     async function startScan(){
       try{
+        // Vänta en kort stund så fallback-scriptet hinner laddas om primär CDN felade
+        await new Promise(r => setTimeout(r, 250));
         if (!window.Html5Qrcode) throw new Error("html5-qrcode inte laddat.");
 
         dlgScan.showModal();
