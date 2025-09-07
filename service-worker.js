@@ -1,5 +1,5 @@
 // Enkel cache-first SW för statiska filer
-const CACHE_NAME = 'inventering-v6';
+const CACHE_NAME = 'inventering-v7';
 const ASSETS = [
   './',
   './index.html',
