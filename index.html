@@ -14,11 +14,9 @@
   <meta name="apple-mobile-web-app-title" content="Inventeringsapp">
   <link rel="apple-touch-icon" href="Icon-512.png" />
 
-  <!-- html5-qrcode med automatisk fallback -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"
-    onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js';document.head.appendChild(s);}())">
-  </script>
+  <!-- Quagga2 för live streckkodsskanning -->
+  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@2.0.2/dist/quagga.min.js"></script>
+
   <!-- jsPDF + autoTable -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
@@ -67,6 +65,10 @@
     .promo a {color:#b8ffcb; text-decoration:underline;}
     .promo .cta {margin-left:auto}
     .cta button{background:#1d3b24;border-color:#2b6c3e}
+
+    /* Skannerruta */
+    #scan-box { width:100%; height:60vh; position:relative; overflow:hidden; background:#000; border-radius:10px }
+    #scan-box canvas, #scan-box video { max-width:100%; width:100%; }
   </style>
 </head>
 <body>
@@ -129,14 +131,14 @@
     <details class="row">
       <summary>ℹ️ Tips & behörigheter</summary>
       <div class="card" style="margin-top:8px">
-        • På iPhone/iPad krävs **https** för kameraåtkomst.<br>
-        • Om kameran inte startar: ge webbläsaren **kamerabehörighet** (tryck låset i adressfältet).<br>
-        • Börja testa i Safari/Chrome innan du “installerar” som PWA.
+        • På iPhone/iPad krävs **https** (du har det via github.io).<br>
+        • Ge webbläsaren **Kamera-tillstånd** (tryck på lås-ikonen i adressfältet).<br>
+        • Om kameran vägrar starta: stäng alla appens flikar, bumpa service worker-version, öppna igen med `?v=6`.
       </div>
     </details>
   </div>
 
-  <!-- Banner-reklam -->
+  <!-- Banner -->
   <div class="promo">
     <div class="promo-inner">
       <div class="logo-dot"></div>
@@ -154,11 +156,11 @@
   <dialog id="dlg-scan" style="max-width:900px;width:96%;border:none;border-radius:14px;padding:0;background:#0b0f17;color:#fff">
     <div class="card" style="border:none">
       <h3 style="margin-top:0">📷 Skanna streckkod</h3>
-      <div id="scan-box" style="width:100%;max-height:60vh"></div>
+      <div id="scan-box"></div>
       <div class="row">
         <div class="actions">
           <button id="stop-scan" class="btn-danger">Stoppa</button>
-          <span class="badge">Auto-stänger vid träff</span>
+          <span class="badge">Stänger vid träff</span>
         </div>
         <div class="right small" id="scan-status">Startar kamera…</div>
       </div>
@@ -280,50 +282,65 @@
       save();
     }
 
-    // ---------- Skanning (html5-qrcode) ----------
+    // ---------- Skanning med Quagga2 ----------
     const dlgScan = document.getElementById('dlg-scan');
-    const scanBox = document.getElementById('scan-box');
     const scanStatus = document.getElementById('scan-status');
-    let scanner = null;
+    let quaggaRunning = false;
 
-    async function startScan(){
+    function startScan(){
       try{
-        // Vänta en kort stund så fallback-scriptet hinner laddas om primär CDN felade
-        await new Promise(r => setTimeout(r, 250));
-        if (!window.Html5Qrcode) throw new Error("html5-qrcode inte laddat.");
-
         dlgScan.showModal();
         scanStatus.textContent = 'Startar kamera…';
 
-        scanner = new Html5Qrcode("scan-box", { verbose: false });
-
-        const cameras = await Html5Qrcode.getCameras();
-        const back = cameras.find(c => /back|rear|environment/i.test(c.label)) || cameras[0];
-        if (!back) throw new Error('Ingen kamera hittades.');
-
-        await scanner.start(
-          back.id,
-          { fps: 10, qrbox: 250, aspectRatio: 1.777, facingMode: "environment" },
-          (decodedText) => {
-            stopScan();
-            openAdd({ code: decodedText, name:'', qty:1, location:'', note:'' });
+        Quagga.init({
+          inputStream: {
+            type: "LiveStream",
+            target: document.querySelector('#scan-box'),
+            constraints: {
+              facingMode: "environment",
+              aspectRatio: { ideal: 1.777 },
+              width: { ideal: 1280 }, height: { ideal: 720 }
+            }
           },
-          (errMsg) => { scanStatus.textContent = errMsg; }
-        );
-        scanStatus.textContent = 'Sikta kameran mot streckkoden…';
+          decoder: {
+            readers: [
+              "ean_reader","ean_8_reader","code_128_reader","code_39_reader",
+              "upc_reader","upc_e_reader","i2of5_reader"
+            ]
+          },
+          locate: true,
+          numOfWorkers: 0 // iOS Safari kräver 0 web workers
+        }, function(err) {
+          if (err) {
+            alert('Kunde inte starta skanning: ' + err.message);
+            try { dlgScan.close(); } catch {}
+            return;
+          }
+          Quagga.start();
+          quaggaRunning = true;
+          scanStatus.textContent = 'Sikta kameran mot streckkoden…';
+        });
+
+        Quagga.onDetected(onDetected);
+        Quagga.onProcessed(function(){ /* kan rita overlay här om du vill */ });
+
       } catch(e){
         alert('Kunde inte starta skanning: ' + e.message);
         try { dlgScan.close(); } catch {}
       }
     }
 
-    async function stopScan(){
+    function onDetected(result){
+      const code = result?.codeResult?.code;
+      if (!code) return;
+      stopScan();
+      openAdd({ code, name:'', qty:1, location:'', note:'' });
+    }
+
+    function stopScan(){
       try{
-        if (scanner) {
-          await scanner.stop();
-          await scanner.clear();
-          scanner = null;
-        }
+        Quagga.offDetected(onDetected);
+        if (quaggaRunning) { Quagga.stop(); quaggaRunning = false; }
       } finally {
         dlgScan.close();
       }
@@ -415,7 +432,7 @@
         img.src = src;
       });
     }
-    function mm(px){ return px * 0.75; } // px -> pt (ungefär)
+    function mm(px){ return px * 0.75; }
 
     async function exportPDF(){
       const { jsPDF } = window.jspdf || {};
@@ -491,7 +508,6 @@
         }
       });
 
-      // Summering per plats
       const totalsByLocation = new Map();
       for (const r of rows){
         const key = (r.location || '—').trim() || '—';
