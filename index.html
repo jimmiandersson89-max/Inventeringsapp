@@ -14,6 +14,12 @@
   <meta name="apple-mobile-web-app-title" content="Inventeringsapp">
   <link rel="apple-touch-icon" href="Icon-512.png" />
 
+  <!-- html5-qrcode för streckkodsskanning (ladda tidigt) -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
+  <!-- jsPDF + autoTable för PDF-rapport -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
+
   <style>
     :root{
       --bg:#0f1115; --card:#1b2230; --muted:#c5cedb; --text:#ffffff; --line:#2a3242;
@@ -50,8 +56,6 @@
     .right{margin-left:auto}
     .small{font-size:12px}
     .center{text-align:center}
-
-    /* Banner-reklam för offert-appen */
     .promo { position:fixed; left:0; right:0; bottom:0; z-index:20;
       background:var(--banner); border-top:1px solid var(--banner-border); }
     .promo-inner { max-width:1100px; margin:0 auto; padding:10px 16px;
@@ -61,10 +65,6 @@
     .promo .cta {margin-left:auto}
     .cta button{background:#1d3b24;border-color:#2b6c3e}
   </style>
-
-  <!-- jsPDF + autoTable för PDF-rapport -->
-  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <header>
@@ -277,36 +277,15 @@
       save();
     }
 
-    // ---------- Skanning (html5-qrcode med dynamisk loader) ----------
+    // ---------- Skanning (html5-qrcode) ----------
     const dlgScan = document.getElementById('dlg-scan');
     const scanBox = document.getElementById('scan-box');
     const scanStatus = document.getElementById('scan-status');
     let scanner = null;
 
-    async function ensureHtml5Qrcode() {
-      if (window.Html5Qrcode) return;
-      const srcs = [
-        "https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.10/minified/html5-qrcode.min.js",
-        "https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"
-      ];
-      for (const src of srcs) {
-        try {
-          await new Promise((resolve, reject) => {
-            const s = document.createElement("script");
-            s.src = src; s.async = true;
-            s.onload = resolve;
-            s.onerror = () => reject(new Error("load failed"));
-            document.head.appendChild(s);
-          });
-          if (window.Html5Qrcode) return;
-        } catch(_) {}
-      }
-      throw new Error("Skannerbiblioteket kunde inte laddas (html5-qrcode).");
-    }
-
     async function startScan(){
       try{
-        await ensureHtml5Qrcode();
+        if (!window.Html5Qrcode) throw new Error("html5-qrcode inte laddat.");
 
         dlgScan.showModal();
         scanStatus.textContent = 'Startar kamera…';
