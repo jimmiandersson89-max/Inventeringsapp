@@ -62,8 +62,8 @@
     .cta button{background:#1d3b24;border-color:#2b6c3e}
   </style>
 
-  <!-- ZXing (streckkod) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
+  <!-- STABIL SKANNER: html5-qrcode -->
+  <script defer src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
   <!-- jsPDF + autoTable för PDF-rapport -->
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
@@ -71,20 +71,24 @@
 <body>
   <header>
     <h1>📦 Offert På Språng – Inventeringsapp</h1>
-    <div class="toolbar">
-      <button id="btn-scan" class="btn-accent">📷 Skanna streckkod</button>
-      <button id="btn-add" class="btn-primary">➕ Lägg till manuellt</button>
-
-      <input id="file-import" type="file" accept=".csv,text/csv" style="display:none">
-      <button id="btn-import">⬆️ Importera CSV</button>
-
-      <button id="btn-export">⬇️ Exportera CSV</button>
-      <button id="btn-export-pdf">🧾 Exportera PDF</button>
-      <button id="btn-clear" class="btn-danger">🗑️ Rensa allt</button>
-    </div>
   </header>
 
+  <!-- KNAPPARNA flyttade NER under rubriken -->
   <div class="wrap">
+    <div class="row card">
+      <div class="toolbar">
+        <button id="btn-scan" class="btn-accent">📷 Skanna streckkod</button>
+        <button id="btn-add" class="btn-primary">➕ Lägg till manuellt</button>
+
+        <input id="file-import" type="file" accept=".csv,text/csv" style="display:none">
+        <button id="btn-import">⬆️ Importera CSV</button>
+
+        <button id="btn-export">⬇️ Exportera CSV</button>
+        <button id="btn-export-pdf">🧾 Exportera PDF</button>
+        <button id="btn-clear" class="btn-danger">🗑️ Rensa allt</button>
+      </div>
+    </div>
+
     <div class="row card">
       <div class="grid-3">
         <div>
@@ -149,11 +153,12 @@
   <dialog id="dlg-scan" style="max-width:900px;width:96%;border:none;border-radius:14px;padding:0;background:#0b0f17;color:#fff">
     <div class="card" style="border:none">
       <h3 style="margin-top:0">📷 Skanna streckkod</h3>
-      <video id="preview" style="width:100%;max-height:50vh;background:#000;border-radius:8px" muted playsinline autoplay></video>
+      <!-- html5-qrcode renderas in i denna DIV -->
+      <div id="scan-box" style="width:100%;max-height:60vh"></div>
       <div class="row">
         <div class="actions">
           <button id="stop-scan" class="btn-danger">Stoppa</button>
-          <span class="badge">Visar första träff</span>
+          <span class="badge">Auto-stänger vid träff</span>
         </div>
         <div class="right small" id="scan-status">Startar kamera…</div>
       </div>
@@ -275,64 +280,54 @@
       save();
     }
 
-    // ---------- Skanning (iOS/Safari-vänlig) ----------
+    // ---------- Skanning med html5-qrcode ----------
     const dlgScan = document.getElementById('dlg-scan');
-    const preview = document.getElementById('preview');
+    const scanBox = document.getElementById('scan-box');
     const scanStatus = document.getElementById('scan-status');
-    let codeReader = null;
-    let currentDeviceId = null;
+    let scanner = null;
 
     async function startScan(){
       try{
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          alert('Kamera stöds inte i denna webbläsare.');
-          return;
-        }
-        if (!window.ZXingBrowser) throw new Error('ZXing ej laddat');
+        if (!window.Html5Qrcode) throw new Error('Skannerbiblioteket har inte laddats (html5-qrcode).');
 
         dlgScan.showModal();
         scanStatus.textContent = 'Startar kamera…';
 
-        // Be om kamera (bak-kamera som ideal) – viktigt för iOS
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } },
-          audio: false
-        });
-        preview.srcObject = stream;
+        // Skapa scanner
+        scanner = new Html5Qrcode("scan-box", { verbose: false });
 
-        // Lista enheter efter att behörighet givits
-        const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
-        const backCam = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[0];
-        currentDeviceId = backCam?.deviceId || null;
+        // Lista kameror
+        const cameras = await Html5Qrcode.getCameras();
+        const back = cameras.find(c => /back|rear|environment/i.test(c.label)) || cameras[0];
+        if (!back) throw new Error('Ingen kamera hittades.');
 
-        codeReader = new ZXingBrowser.BrowserMultiFormatReader();
-        const result = await codeReader.decodeOnceFromVideoDevice(currentDeviceId, preview, (res, err) => {
-          if (res) scanStatus.textContent = 'Träff: ' + res.getText();
-          else if (err && !(err instanceof ZXingBrowser.NotFoundException)) scanStatus.textContent = 'Fel: ' + err;
-        });
-
-        if (result) {
-          const code = result.getText();
-          openAdd({ code, name:'', qty:1, location:'', note:'' });
-        }
+        await scanner.start(
+          back.id,
+          { fps: 10, qrbox: 250, aspectRatio: 1.777, facingMode: "environment" },
+          (decodedText/*, decodedResult*/) => {
+            // Fångad kod
+            stopScan();
+            openAdd({ code: decodedText, name:'', qty:1, location:'', note:'' });
+          },
+          (errMsg) => { scanStatus.textContent = errMsg; }
+        );
+        scanStatus.textContent = 'Sikta kameran mot streckkoden…';
       } catch(e){
-        console.error(e);
-        if (String(e).includes('NotAllowedError')) {
-          alert('Kameratillstånd nekades. Tryck på låset i adressfältet och tillåt Kamera för github.io.');
-        } else {
-          alert('Kunde inte starta skanning: ' + e.message);
-        }
+        alert('Kunde inte starta skanning: ' + e.message);
         try { dlgScan.close(); } catch {}
       }
     }
 
     async function stopScan(){
       try{
-        if (codeReader) { await codeReader.reset(); codeReader = null; }
-        const s = preview.srcObject;
-        if (s && s.getTracks) s.getTracks().forEach(t=>t.stop());
-        preview.srcObject = null;
-      } finally { dlgScan.close(); }
+        if (scanner) {
+          await scanner.stop();
+          await scanner.clear();
+          scanner = null;
+        }
+      } finally {
+        dlgScan.close();
+      }
     }
 
     // ---------- Lägg till / redigera ----------
@@ -412,7 +407,7 @@
       download('inventering.csv', toCSV(rows));
     }
 
-    // ---------- PDF-rapport (med miniatyr + summering per plats) ----------
+    // ---------- PDF-rapport (miniatyr + summering per plats) ----------
     function loadImage(src){
       return new Promise((resolve,reject)=>{
         const img = new Image();
@@ -421,7 +416,7 @@
         img.src = src;
       });
     }
-    function mm(px){ return px * 0.75; } // px -> pt (ungefär)
+    function mm(px){ return px * 0.75; }
 
     async function exportPDF(){
       const { jsPDF } = window.jspdf || {};
@@ -438,7 +433,6 @@
         note: it.note || ''
       }));
 
-      // Ladda miniatyrer (om finns)
       const photos = {};
       for (const r of rows){
         if (r.photo && !photos[r.photo]){
@@ -446,17 +440,15 @@
         }
       }
 
-      const doc = new jsPDF({unit:'pt', format:'a4'}); // 595×842 pt
+      const doc = new jsPDF({unit:'pt', format:'a4'});
       const fmt = new Date().toLocaleString('sv-SE');
 
-      // Header
       doc.setFont('helvetica','bold'); doc.setFontSize(14);
       doc.text('Offert På Språng – Inventeringsrapport', 40, 40);
       doc.setFont('helvetica','normal'); doc.setFontSize(10);
       doc.text(`Genererad: ${fmt}`, 40, 58);
       doc.text(`Antal artiklar: ${rows.length}`, 40, 72);
 
-      // Huvudtabell
       const head = [['Bild', 'Kod', 'Namn', 'Antal', 'Plats', 'Notering']];
       const body = rows.map(r => [ '', r.code, r.name, String(r.qty), r.location, r.note ]);
 
@@ -484,7 +476,7 @@
             const r = rows[data.row.index];
             const img = r.photo ? photos[r.photo] : null;
             if (img) {
-              const size = 24; // px
+              const size = 24;
               const w = mm(size), h = mm(size);
               const x = data.cell.x + 4;
               const y = data.cell.y + (data.cell.height - h) / 2;
@@ -500,7 +492,6 @@
         }
       });
 
-      // Summering per plats
       const totalsByLocation = new Map();
       for (const r of rows){
         const key = (r.location || '—').trim() || '—';
