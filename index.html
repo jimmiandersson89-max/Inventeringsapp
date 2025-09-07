@@ -52,22 +52,21 @@
     .center{text-align:center}
 
     /* Banner-reklam för offert-appen */
-    .promo {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-      background: var(--banner); border-top: 1px solid var(--banner-border);
-    }
-    .promo-inner {
-      max-width: 1100px; margin: 0 auto; padding: 10px 16px;
-      display: flex; align-items: center; gap: 12px;
-    }
-    .promo .logo-dot {width: 10px; height: 10px; border-radius: 50%; background: #32d16d; flex: 0 0 auto;}
-    .promo a {color:#b8ffcb; text-decoration: underline;}
+    .promo { position:fixed; left:0; right:0; bottom:0; z-index:20;
+      background:var(--banner); border-top:1px solid var(--banner-border); }
+    .promo-inner { max-width:1100px; margin:0 auto; padding:10px 16px;
+      display:flex; align-items:center; gap:12px; }
+    .promo .logo-dot {width:10px; height:10px; border-radius:50%; background:#32d16d; flex:0 0 auto;}
+    .promo a {color:#b8ffcb; text-decoration:underline;}
     .promo .cta {margin-left:auto}
     .cta button{background:#1d3b24;border-color:#2b6c3e}
   </style>
 
-  <!-- ZXing för kamera-skanning (via CDN) -->
+  <!-- ZXing (streckkod) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
+  <!-- jsPDF + autoTable för PDF-rapport -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <header>
@@ -80,6 +79,7 @@
       <button id="btn-import">⬆️ Importera CSV</button>
 
       <button id="btn-export">⬇️ Exportera CSV</button>
+      <button id="btn-export-pdf">🧾 Exportera PDF</button>
       <button id="btn-clear" class="btn-danger">🗑️ Rensa allt</button>
     </div>
   </header>
@@ -125,22 +125,22 @@
       <summary>ℹ️ Tips & behörigheter</summary>
       <div class="card" style="margin-top:8px">
         • På iPhone/iPad krävs **https** för kameraåtkomst.<br>
-        • Om kameran inte startar: ge webbläsaren **kamerabehörighet**.<br>
-        • Låg belysning kan försvåra skanning – slå ev. på ficklampan i OS.
+        • Om kameran inte startar: ge webbläsaren **kamerabehörighet** (tryck låset i adressfältet).<br>
+        • Börja testa i Safari/Chrome innan du “installerar” som PWA.
       </div>
     </details>
   </div>
 
-  <!-- Banner-reklam (alltid synlig) -->
+  <!-- Banner-reklam (byt länken när Play-länken finns) -->
   <div class="promo">
     <div class="promo-inner">
       <div class="logo-dot"></div>
       <div class="small">
         Behöver du även skapa proffsiga offerter? <strong>Offert På Språng</strong> hjälper dig att skicka offert-PDF:er på några sekunder.
-        <br class="hide-sm"> Testa systerappen här: <a href="https://play.google.com/store/apps/details?id=REPLACE_WITH_YOUR_ID" target="_blank" rel="noopener">Google Play</a>
+        Testa systerappen här: <a href="https://jimmiandersson89-max.github.io/Priskalkylator/" target="_blank" rel="noopener">Öppna</a>
       </div>
       <div class="cta">
-        <button onclick="window.open('https://play.google.com/store/apps/details?id=REPLACE_WITH_YOUR_ID','_blank')" class="btn">Öppna i Play</button>
+        <button onclick="window.open('https://jimmiandersson89-max.github.io/Priskalkylator/','_blank')" class="btn">Visa nu</button>
       </div>
     </div>
   </div>
@@ -149,7 +149,7 @@
   <dialog id="dlg-scan" style="max-width:900px;width:96%;border:none;border-radius:14px;padding:0;background:#0b0f17;color:#fff">
     <div class="card" style="border:none">
       <h3 style="margin-top:0">📷 Skanna streckkod</h3>
-      <video id="preview" style="width:100%;max-height:50vh;background:#000;border-radius:8px" muted playsinline></video>
+      <video id="preview" style="width:100%;max-height:50vh;background:#000;border-radius:8px" muted playsinline autoplay></video>
       <div class="row">
         <div class="actions">
           <button id="stop-scan" class="btn-danger">Stoppa</button>
@@ -204,9 +204,7 @@
   <script>
     // ---------- Data ----------
     const KEY = 'inventory_items_v1';
-    /** @type {Array<{id:string,code:string,name:string,qty:number,location:string,note:string,photo?:string}>} */
     let items = [];
-
     function load(){ try{ items = JSON.parse(localStorage.getItem(KEY)) || []; } catch{ items = []; } }
     function save(){ localStorage.setItem(KEY, JSON.stringify(items)); render(); }
     function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
@@ -277,23 +275,38 @@
       save();
     }
 
-    // ---------- Skanning (ZXing) ----------
+    // ---------- Skanning (iOS/Safari-vänlig) ----------
     const dlgScan = document.getElementById('dlg-scan');
     const preview = document.getElementById('preview');
     const scanStatus = document.getElementById('scan-status');
     let codeReader = null;
+    let currentDeviceId = null;
 
     async function startScan(){
       try{
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          alert('Kamera stöds inte i denna webbläsare.');
+          return;
+        }
         if (!window.ZXingBrowser) throw new Error('ZXing ej laddat');
-        codeReader = new ZXingBrowser.BrowserMultiFormatReader();
+
         dlgScan.showModal();
         scanStatus.textContent = 'Startar kamera…';
 
+        // Be om kamera (bak-kamera som ideal) – viktigt för iOS
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false
+        });
+        preview.srcObject = stream;
+
+        // Lista enheter efter att behörighet givits
         const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
         const backCam = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[0];
+        currentDeviceId = backCam?.deviceId || null;
 
-        const result = await codeReader.decodeOnceFromVideoDevice(backCam?.deviceId, preview, (res, err) => {
+        codeReader = new ZXingBrowser.BrowserMultiFormatReader();
+        const result = await codeReader.decodeOnceFromVideoDevice(currentDeviceId, preview, (res, err) => {
           if (res) scanStatus.textContent = 'Träff: ' + res.getText();
           else if (err && !(err instanceof ZXingBrowser.NotFoundException)) scanStatus.textContent = 'Fel: ' + err;
         });
@@ -303,14 +316,21 @@
           openAdd({ code, name:'', qty:1, location:'', note:'' });
         }
       } catch(e){
-        alert('Kunde inte starta skanning: ' + e.message);
-        dlgScan.close();
+        console.error(e);
+        if (String(e).includes('NotAllowedError')) {
+          alert('Kameratillstånd nekades. Tryck på låset i adressfältet och tillåt Kamera för github.io.');
+        } else {
+          alert('Kunde inte starta skanning: ' + e.message);
+        }
+        try { dlgScan.close(); } catch {}
       }
     }
+
     async function stopScan(){
       try{
         if (codeReader) { await codeReader.reset(); codeReader = null; }
-        const s = preview.srcObject; if (s && s.getTracks) s.getTracks().forEach(t=>t.stop());
+        const s = preview.srcObject;
+        if (s && s.getTracks) s.getTracks().forEach(t=>t.stop());
         preview.srcObject = null;
       } finally { dlgScan.close(); }
     }
@@ -392,31 +412,143 @@
       download('inventering.csv', toCSV(rows));
     }
 
+    // ---------- PDF-rapport (med miniatyr + summering per plats) ----------
+    function loadImage(src){
+      return new Promise((resolve,reject)=>{
+        const img = new Image();
+        img.onload = ()=> resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+    function mm(px){ return px * 0.75; } // px -> pt (ungefär)
+
+    async function exportPDF(){
+      const { jsPDF } = window.jspdf || {};
+      if (!jsPDF || !window.jspdf || !('autoTable' in (jsPDF.API || {}))){
+        alert('PDF-biblioteket har inte laddats än. Testa igen om några sekunder.');
+        return;
+      }
+      const rows = items.map(it => ({
+        photo: it.photo || null,
+        code: it.code || '',
+        name: it.name || '',
+        qty: Number.isFinite(it.qty) ? it.qty : 0,
+        location: it.location || '',
+        note: it.note || ''
+      }));
+
+      // Ladda miniatyrer (om finns)
+      const photos = {};
+      for (const r of rows){
+        if (r.photo && !photos[r.photo]){
+          try { photos[r.photo] = await loadImage(r.photo); } catch { photos[r.photo] = null; }
+        }
+      }
+
+      const doc = new jsPDF({unit:'pt', format:'a4'}); // 595×842 pt
+      const fmt = new Date().toLocaleString('sv-SE');
+
+      // Header
+      doc.setFont('helvetica','bold'); doc.setFontSize(14);
+      doc.text('Offert På Språng – Inventeringsrapport', 40, 40);
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      doc.text(`Genererad: ${fmt}`, 40, 58);
+      doc.text(`Antal artiklar: ${rows.length}`, 40, 72);
+
+      // Huvudtabell
+      const head = [['Bild', 'Kod', 'Namn', 'Antal', 'Plats', 'Notering']];
+      const body = rows.map(r => [ '', r.code, r.name, String(r.qty), r.location, r.note ]);
+
+      doc.autoTable({
+        startY: 90,
+        head, body,
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+        headStyles: { fillColor: [34, 211, 238] },
+        columnStyles: {
+          0: { cellWidth: 36 },
+          1: { cellWidth: 120 },
+          2: { cellWidth: 160 },
+          3: { cellWidth: 50, halign:'right' },
+          4: { cellWidth: 100 },
+          5: { cellWidth: 'auto' }
+        },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 0) {
+            const r = rows[data.row.index];
+            if (r.photo) data.cell.styles.minCellHeight = 30;
+          }
+        },
+        didDrawCell: (data) => {
+          if (data.section === 'body' && data.column.index === 0) {
+            const r = rows[data.row.index];
+            const img = r.photo ? photos[r.photo] : null;
+            if (img) {
+              const size = 24; // px
+              const w = mm(size), h = mm(size);
+              const x = data.cell.x + 4;
+              const y = data.cell.y + (data.cell.height - h) / 2;
+              try { doc.addImage(img, 'PNG', x, y, w, h); } catch {}
+            }
+          }
+        },
+        didDrawPage: (data) => {
+          const page = doc.internal.pageSize;
+          const ph = page.height || page.getHeight();
+          doc.setFontSize(9); doc.setTextColor(130);
+          doc.text('© Reklamgiganten AB – App skapad av Offert På Språng', 40, ph - 20);
+        }
+      });
+
+      // Summering per plats
+      const totalsByLocation = new Map();
+      for (const r of rows){
+        const key = (r.location || '—').trim() || '—';
+        if (!totalsByLocation.has(key)) totalsByLocation.set(key, {rows:0, qty:0});
+        const t = totalsByLocation.get(key);
+        t.rows += 1; t.qty += (Number.isFinite(r.qty) ? r.qty : 0);
+      }
+      const sumHead = [['Plats', 'Antal rader', 'Summa antal']];
+      const sumBody = [...totalsByLocation.entries()]
+        .sort((a,b)=> a[0].localeCompare(b[0], 'sv'))
+        .map(([loc, t]) => [loc, String(t.rows), String(t.qty)]);
+
+      doc.autoTable({
+        head: sumHead,
+        body: sumBody,
+        styles: { font: 'helvetica', fontSize: 10, cellPadding: 4 },
+        headStyles: { fillColor: [22, 163, 74], textColor: 255 },
+        startY: doc.lastAutoTable.finalY + 20,
+        columnStyles: {
+          0: { cellWidth: 220 },
+          1: { cellWidth: 120, halign:'right' },
+          2: { cellWidth: 120, halign:'right' }
+        }
+      });
+
+      const totalRows = rows.length;
+      const totalQty  = rows.reduce((s,r)=> s + (Number.isFinite(r.qty) ? r.qty : 0), 0);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.text(`Totalt: ${totalRows} rader • ${totalQty} i antal`, 40, doc.lastAutoTable.finalY + 18);
+
+      doc.save('inventeringsrapport.pdf');
+    }
+
     // ---------- Import CSV ----------
-    // Stödjer rubriker: id,code,name,qty,location,note,photoDataUrl (ordning spelar ingen roll)
     function parseCSV(text){
       const lines = text.replace(/\r/g,'').split('\n').filter(l=>l.trim().length>0);
       if (!lines.length) return [];
       const head = splitCSVLine(lines[0]).map(h=>h.trim().toLowerCase());
       const ix = (k)=> head.indexOf(k);
-
       const out = [];
       for (let i=1;i<lines.length;i++){
         const cols = splitCSVLine(lines[i]);
-        const get = (k)=> {
-          const j = ix(k);
-          return j>=0 ? (cols[j]||'') : '';
-        };
-        const row = {
-          id: get('id') || '',
-          code: get('code') || '',
-          name: get('name') || '',
-          qty: parseInt(get('qty')||'0',10) || 0,
-          location: get('location') || '',
-          note: get('note') || '',
-          photo: get('photodataurl') || ''
-        };
-        out.push(row);
+        const get = (k)=> { const j=ix(k); return j>=0 ? (cols[j]||'') : ''; };
+        out.push({
+          id:get('id')||'', code:get('code')||'', name:get('name')||'',
+          qty: parseInt(get('qty')||'0',10)||0, location:get('location')||'',
+          note:get('note')||'', photo:get('photodataurl')||''
+        });
       }
       return out;
     }
@@ -441,14 +573,10 @@
       const text = await file.text();
       const rows = parseCSV(text);
       if (!rows.length){ alert('Kunde inte läsa CSV (saknar rader).'); return; }
-
       let added=0, updated=0;
       for (const r of rows){
-        // Matcha befintlig post via id eller code
-        let it = null;
-        if (r.id) it = items.find(x=>x.id===r.id);
+        let it = r.id ? items.find(x=>x.id===r.id) : null;
         if (!it && r.code) it = items.find(x=>x.code===r.code);
-
         if (it){
           it.code = r.code || it.code;
           it.name = r.name || it.name;
@@ -458,15 +586,7 @@
           if (r.photo) it.photo = r.photo;
           updated++;
         } else {
-          items.push({
-            id: r.id || uid(),
-            code: r.code||'',
-            name: r.name||'',
-            qty: r.qty||0,
-            location: r.location||'',
-            note: r.note||'',
-            photo: r.photo||''
-          });
+          items.push({ id:r.id||uid(), code:r.code||'', name:r.name||'', qty:r.qty||0, location:r.location||'', note:r.note||'', photo:r.photo||'' });
           added++;
         }
       }
@@ -487,6 +607,7 @@
     document.getElementById('stop-scan').addEventListener('click', stopScan);
     document.getElementById('btn-add').addEventListener('click', ()=>openAdd({qty:1}));
     document.getElementById('btn-export').addEventListener('click', exportCSV);
+    document.getElementById('btn-export-pdf').addEventListener('click', exportPDF);
     document.getElementById('btn-clear').addEventListener('click', clearAll);
     [searchEl, filterLocEl, minQtyEl].forEach(el => el.addEventListener('input', render));
 
@@ -498,7 +619,7 @@
       fileImport.value = '';
     });
 
-    // ---------- PWA install (service worker) ----------
+    // ---------- PWA install ----------
     if ('serviceWorker' in navigator){
       window.addEventListener('load', ()=> {
         navigator.serviceWorker.register('./service-worker.js').catch(console.error);
@@ -506,8 +627,7 @@
     }
 
     // ---------- Init ----------
-    load();
-    render();
+    load(); render();
   </script>
 </body>
 </html>
