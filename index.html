@@ -14,9 +14,8 @@
   <meta name="apple-mobile-web-app-title" content="Inventeringsapp">
   <link rel="apple-touch-icon" href="Icon-512.png" />
 
-  <!-- Quagga2 för live streckkodsskanning -->
-  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@2.0.2/dist/quagga.min.js"></script>
-
+  <!-- Quagga (global Quagga-variabel, funkar i Safari) -->
+  <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
   <!-- jsPDF + autoTable -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
@@ -57,6 +56,8 @@
     .right{margin-left:auto}
     .small{font-size:12px}
     .center{text-align:center}
+
+    /* Banner */
     .promo { position:fixed; left:0; right:0; bottom:0; z-index:20;
       background:var(--banner); border-top:1px solid var(--banner-border); }
     .promo-inner { max-width:1100px; margin:0 auto; padding:10px 16px;
@@ -133,7 +134,7 @@
       <div class="card" style="margin-top:8px">
         • På iPhone/iPad krävs **https** (du har det via github.io).<br>
         • Ge webbläsaren **Kamera-tillstånd** (tryck på lås-ikonen i adressfältet).<br>
-        • Om kameran vägrar starta: stäng alla appens flikar, bumpa service worker-version, öppna igen med `?v=6`.
+        • Om kameran vägrar starta: bumpa service worker-version, stäng alla flikar, öppna igen med `?v=7`.
       </div>
     </details>
   </div>
@@ -282,7 +283,7 @@
       save();
     }
 
-    // ---------- Skanning med Quagga2 ----------
+    // ---------- Skanning med Quagga ----------
     const dlgScan = document.getElementById('dlg-scan');
     const scanStatus = document.getElementById('scan-status');
     let quaggaRunning = false;
@@ -292,14 +293,20 @@
         dlgScan.showModal();
         scanStatus.textContent = 'Startar kamera…';
 
+        if (!window.Quagga) {
+          alert("Quagga kunde inte laddas.");
+          dlgScan.close();
+          return;
+        }
+
         Quagga.init({
           inputStream: {
             type: "LiveStream",
             target: document.querySelector('#scan-box'),
             constraints: {
               facingMode: "environment",
-              aspectRatio: { ideal: 1.777 },
-              width: { ideal: 1280 }, height: { ideal: 720 }
+              width: { ideal: 1280 }, height: { ideal: 720 },
+              aspectRatio: { ideal: 1.777 }
             }
           },
           decoder: {
@@ -309,11 +316,11 @@
             ]
           },
           locate: true,
-          numOfWorkers: 0 // iOS Safari kräver 0 web workers
+          numOfWorkers: 0 // iOS/Safari kräver 0
         }, function(err) {
           if (err) {
             alert('Kunde inte starta skanning: ' + err.message);
-            try { dlgScan.close(); } catch {}
+            dlgScan.close();
             return;
           }
           Quagga.start();
@@ -322,7 +329,6 @@
         });
 
         Quagga.onDetected(onDetected);
-        Quagga.onProcessed(function(){ /* kan rita overlay här om du vill */ });
 
       } catch(e){
         alert('Kunde inte starta skanning: ' + e.message);
@@ -331,7 +337,7 @@
     }
 
     function onDetected(result){
-      const code = result?.codeResult?.code;
+      const code = result && result.codeResult && result.codeResult.code;
       if (!code) return;
       stopScan();
       openAdd({ code, name:'', qty:1, location:'', note:'' });
@@ -626,7 +632,7 @@
       fileImport.value = '';
     });
 
-    // ---------- PWA install ----------
+    // ---------- PWA ----------
     if ('serviceWorker' in navigator){
       window.addEventListener('load', ()=> {
         navigator.serviceWorker.register('./service-worker.js').catch(console.error);
