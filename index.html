@@ -6,15 +6,15 @@
   <title>Offert På Språng – Inventeringsapp</title>
 
   <!-- PWA -->
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="/Inventeringsapp/manifest.webmanifest">
   <meta name="theme-color" content="#111418" />
-  <link rel="icon" href="icon-512.png" sizes="512x512">
-  <link rel="icon" href="icon-512.png" sizes="192x192">
+  <link rel="icon" href="/Inventeringsapp/icon-512.png" sizes="512x512">
+  <link rel="icon" href="/Inventeringsapp/icon-512.png" sizes="192x192">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Inventeringsapp">
-  <link rel="apple-touch-icon" href="icon-512.png" />
+  <link rel="apple-touch-icon" href="/Inventeringsapp/icon-512.png" />
 
-  <!-- Quagga (streckkodsskanner) -->
+  <!-- Quagga (barcode scanning) -->
   <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
   <!-- jsPDF + autoTable -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -30,20 +30,16 @@
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif}
     header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between;background:#121622;position:sticky;top:0;z-index:10}
     header h1{margin:0;font-size:18px}
-
     .wrap{max-width:1100px;margin:0 auto;padding:16px;padding-bottom:96px}
     .row{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
     .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
-
     button,.btn{background:#243149;border:1px solid var(--line);color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer}
     button:hover{outline:1px solid var(--accent)}
     .btn-primary{background:var(--ok);border-color:#0d8e3c}
     .btn-danger{background:#3a1920;border-color:#5d1d28;color:#ffb7c2}
     .btn-accent{background:#16323a;border-color:#1b5a65}
-
     input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#111825;color:var(--text)}
     label{font-size:12px;color:var(--muted)}
-
     table{width:100%;border-collapse:collapse}
     th,td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
     th{color:var(--muted);text-align:left;font-weight:600}
@@ -60,8 +56,6 @@
     .right{margin-left:auto}
     .small{font-size:12px}
     .center{text-align:center}
-
-    /* Banner */
     .promo { position:fixed; left:0; right:0; bottom:0; z-index:20;
       background:var(--banner); border-top:1px solid var(--banner-border); }
     .promo-inner { max-width:1100px; margin:0 auto; padding:10px 16px;
@@ -70,17 +64,18 @@
     .promo a {color:#b8ffcb; text-decoration:underline;}
     .promo .cta {margin-left:auto}
     .cta button{background:#1d3b24;border-color:#2b6c3e}
-
-    /* Skannerruta */
     #scan-box { width:100%; height:60vh; position:relative; overflow:hidden; background:#000; border-radius:10px }
     #scan-box canvas, #scan-box video { max-width:100%; width:100%; }
-
     @media (max-width: 520px){
       .wrap{ padding:12px 12px 96px; }
       header{ padding:12px 14px; }
       header h1{ font-size:16px; }
       .card{ padding:12px; border-radius:10px; }
-      .toolbar-stick{position: sticky; top: 56px; z-index: 15; background: rgba(15,17,21,.85); backdrop-filter: blur(6px); border: 1px solid var(--line); border-radius: 12px; padding: 10px;}
+      .toolbar-stick{
+        position: sticky; top: 56px; z-index: 15;
+        background: rgba(15,17,21,.85); backdrop-filter: blur(6px);
+        border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+      }
       .toolbar{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
       .toolbar > *{ width:100%; }
       button,.btn{ padding:12px 14px; border-radius:12px; font-size:15px; }
@@ -90,14 +85,17 @@
       input,select,textarea{ padding:12px; font-size:15px; }
       table thead{ display:none; }
       table, tbody{ display:block; }
-      tbody tr{ display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px; margin-bottom:12px; }
-      tbody td{ display:grid; grid-template-columns:110px 1fr; gap:8px; padding:6px 0; border:none; align-items:center; }
+      tbody tr{ display:block; background:var(--card); border:1px solid var(--line);
+        border-radius:12px; padding:10px; margin-bottom:12px; }
+      tbody td{ display:grid; grid-template-columns:110px 1fr; gap:8px;
+        padding:6px 0; border:none; align-items:center; }
       tbody td::before{ content: attr(data-label); color: var(--muted); font-size:12px; }
       tbody td:first-child{ grid-template-columns:80px 1fr; }
       .img-thumb{ width:72px; height:72px; }
       .actions{ justify-content:flex-start; }
       .nowrap{ white-space:normal; }
-      .promo .promo-inner{ flex-direction:column; align-items:stretch; text-align:center; gap:8px; padding:10px 12px; }
+      .promo .promo-inner{ flex-direction:column; align-items:stretch; text-align:center;
+        gap:8px; padding:10px 12px; }
       .promo .small{ font-size:13px; line-height:1.35; }
       .promo .cta{ margin-left:0; }
       .promo .cta .btn{ width:100%; padding:12px; }
@@ -109,6 +107,7 @@
     <h1>📦 Offert På Språng – Inventeringsapp</h1>
   </header>
 
+  <!-- Sticky toolbar -->
   <div class="wrap">
     <div class="row toolbar-stick">
       <div class="toolbar">
@@ -125,21 +124,60 @@
     <div class="row card">
       <div class="grid-3">
         <div><label for="search">Sök</label><input id="search" placeholder="Skriv för att filtrera…" /></div>
-        <div><label for="filter-location">Filtrera plats</label><input id="filter-location" placeholder="t.ex. Lager A" /></div>
+        <div><label for="filter-location">Plats</label><input id="filter-location" placeholder="t.ex. Lager A" /></div>
         <div><label for="min-qty">Minsta antal</label><input id="min-qty" type="number" min="0" step="1" placeholder="0" /></div>
       </div>
-      <div class="hint">All data sparas lokalt i din webbläsare (offline-stöd).</div>
+      <div class="hint">All data sparas lokalt i din webbläsare (offline-stöd). Exportera vid behov.</div>
     </div>
 
     <div class="row card">
       <table id="table">
-        <thead><tr><th>Bild</th><th>Kod</th><th>Namn</th><th>Antal</th><th>Plats</th><th>Notering</th><th>Åtgärder</th></tr></thead>
+        <thead>
+          <tr><th>Bild</th><th>Kod</th><th>Namn</th><th>Antal</th><th>Plats</th><th>Notering</th><th>Åtgärder</th></tr>
+        </thead>
         <tbody id="tbody"></tbody>
       </table>
       <div id="empty" class="center hint" style="display:none;padding:12px;">Inga artiklar ännu.</div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Banner -->
+  <div class="promo">
+    <div class="promo-inner">
+      <div class="logo-dot"></div>
+      <div class="small">
+        Behöver du även skapa offerter? <strong>Offert På Språng</strong> hjälper dig att skicka offert-PDF:er.
+        <a href="https://jimmiandersson89-max.github.io/Priskalkylator/" target="_blank">Öppna</a>
+      </div>
+      <div class="cta">
+        <button onclick="window.open('https://jimmiandersson89-max.github.io/Priskalkylator/','_blank')" class="btn">Visa nu</button>
+        <button id="promo-close" class="btn">Stäng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dialoger (skanna + lägg till) -->
+  <dialog id="dlg-scan"><div id="scan-box"></div><button id="stop-scan">Stoppa</button></dialog>
+  <dialog id="dlg-add"><form method="dialog">
+    <input type="hidden" id="edit-id" />
+    <input id="code" placeholder="Kod" /><input id="name" placeholder="Namn" />
+    <input id="qty" type="number" value="1" /><input id="location" placeholder="Plats" />
+    <input id="photo" type="file" accept="image/*" capture="environment" />
+    <textarea id="note"></textarea>
+    <button value="cancel">Avbryt</button><button id="save-item" value="default">Spara</button>
+  </form></dialog>
+
+  <script>
+    /* === Din hela JS från tidigare (render, scan, add, export, pdf etc) === */
+
+    // PWA registrering
+    if ('serviceWorker' in navigator){
+      window.addEventListener('load', ()=> {
+        navigator.serviceWorker.register('/Inventeringsapp/service-worker.js').catch(console.error);
+      });
+    }
+
+    load(); render();
+  </script>
 </body>
 </html>
