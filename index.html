@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Inventeringsapp">
   <link rel="apple-touch-icon" href="Icon-512.png" />
 
-  <!-- Quagga (barcode scanner) -->
+  <!-- Quagga (global Quagga-variabel, funkar i Safari) -->
   <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
   <!-- jsPDF + autoTable -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -53,31 +53,51 @@
     .hint{color:var(--muted);font-size:12px}
     .badge{display:inline-block;padding:2px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--muted)}
     .img-thumb{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#0b0f17}
+    details{border:1px dashed var(--line);border-radius:10px;padding:8px 10px}
+    summary{cursor:pointer;color:var(--muted)}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
     .nowrap{white-space:nowrap}
     .right{margin-left:auto}
     .small{font-size:12px}
     .center{text-align:center}
 
-    /* Mobilförbättringar */
+    /* ===== Mobilförbättringar ===== */
     @media (max-width: 520px){
       .wrap{ padding:12px 12px 96px; }
       header{ padding:12px 14px; }
       header h1{ font-size:16px; }
       .card{ padding:12px; border-radius:10px; }
+
+      .toolbar-stick{
+        position: sticky; top: 56px; z-index: 15;
+        background: rgba(15,17,21,.85); backdrop-filter: blur(6px);
+        border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+      }
       .toolbar{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
       .toolbar > *{ width:100%; }
       button,.btn{ padding:12px 14px; border-radius:12px; font-size:15px; }
-      .grid-3,.grid-2{ grid-template-columns:1fr; gap:10px; }
+
+      .grid-3{ grid-template-columns: 1fr; gap:10px; }
+      .grid-2{ grid-template-columns: 1fr; gap:10px; }
       label{ font-size:11px; }
       input,select,textarea{ padding:12px; font-size:15px; }
+
       table thead{ display:none; }
       table, tbody{ display:block; }
-      tbody tr{ display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px; margin-bottom:12px; }
-      tbody td{ display:grid; grid-template-columns:110px 1fr; gap:8px; padding:6px 0; border:none; align-items:center; }
-      tbody td::before{ content: attr(data-label); color: var(--muted); font-size:12px; }
+      tbody tr{
+        display:block; background:var(--card); border:1px solid var(--line);
+        border-radius:12px; padding:10px; margin-bottom:12px;
+      }
+      tbody td{
+        display:grid; grid-template-columns:110px 1fr; gap:8px;
+        padding:6px 0; border:none; align-items:center;
+      }
+      tbody td::before{
+        content: attr(data-label); color: var(--muted); font-size:12px;
+      }
       tbody td:first-child{ grid-template-columns:80px 1fr; }
       .img-thumb{ width:72px; height:72px; }
+      .actions{ justify-content:flex-start; }
       .nowrap{ white-space:normal; }
     }
   </style>
@@ -87,21 +107,22 @@
     <h1>📦 Offert På Språng – Inventeringsapp</h1>
   </header>
 
+  <!-- Sticky knapprad -->
   <div class="wrap">
-    <!-- Knappar -->
-    <div class="row">
+    <div class="row toolbar-stick">
       <div class="toolbar">
         <button id="btn-scan" class="btn-accent">📷 Skanna streckkod</button>
         <button id="btn-add" class="btn-primary">➕ Lägg till manuellt</button>
+
         <input id="file-import" type="file" accept=".csv,text/csv" style="display:none">
         <button id="btn-import">⬆️ Importera CSV</button>
+
         <button id="btn-export">⬇️ Exportera CSV</button>
         <button id="btn-export-pdf">🧾 Exportera PDF</button>
         <button id="btn-clear" class="btn-danger">🗑️ Rensa allt</button>
       </div>
     </div>
 
-    <!-- Filter -->
     <div class="row card">
       <div class="grid-3">
         <div>
@@ -120,18 +141,26 @@
       <div class="hint">All data sparas lokalt i din webbläsare (offline-stöd). Exportera vid behov.</div>
     </div>
 
-    <!-- Tabell -->
     <div class="row card">
       <table id="table">
         <thead>
-          <tr><th>Bild</th><th>Kod</th><th>Namn</th><th>Antal</th><th>Plats</th><th>Notering</th><th class="nowrap">Åtgärder</th></tr>
+          <tr>
+            <th>Bild</th><th>Kod</th><th>Namn</th><th>Antal</th><th>Plats</th><th>Notering</th><th class="nowrap">Åtgärder</th>
+          </tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
-      <div id="empty" class="center hint" style="display:none;padding:12px;">
-        Inga artiklar ännu. Skanna, importera eller lägg till manuellt.
-      </div>
+      <div id="empty" class="center hint" style="display:none;padding:12px;">Inga artiklar ännu. Skanna, importera eller lägg till manuellt.</div>
     </div>
+
+    <details class="row">
+      <summary>ℹ️ Tips & behörigheter</summary>
+      <div class="card" style="margin-top:8px">
+        • På iPhone/iPad krävs <b>https</b> (github.io har det).<br>
+        • Ge webbläsaren <b>Kamera-tillstånd</b> (lås-ikonen i adressfältet).<br>
+        • Om kameran vägrar starta: bumpa service worker-version, stäng alla flikar, öppna igen med <code>?v=8</code>.
+      </div>
+    </details>
   </div>
 
   <!-- Skanna-modal -->
@@ -155,15 +184,34 @@
       <h3 style="margin-top:0">➕ Lägg till / Redigera artikel</h3>
       <input type="hidden" id="edit-id" />
       <div class="grid-2">
-        <div><label for="code">Kod / streckkod</label><input id="code" /></div>
-        <div><label for="name">Namn</label><input id="name" /></div>
+        <div>
+          <label for="code">Kod / streckkod</label>
+          <input id="code" placeholder="t.ex. 7312345678901" />
+        </div>
+        <div>
+          <label for="name">Namn</label>
+          <input id="name" placeholder="Produktnamn" />
+        </div>
       </div>
       <div class="grid-3">
-        <div><label for="qty">Antal</label><input id="qty" type="number" min="0" step="1" value="1" /></div>
-        <div><label for="location">Plats</label><input id="location" /></div>
-        <div><label for="photo">Foto</label><input id="photo" type="file" accept="image/*" capture="environment" /></div>
+        <div>
+          <label for="qty">Antal</label>
+          <input id="qty" type="number" min="0" step="1" value="1" />
+        </div>
+        <div>
+          <label for="location">Plats</label>
+          <input id="location" placeholder="t.ex. Hylla B2" />
+        </div>
+        <div>
+          <label for="photo">Foto (kamera/fil)</label>
+          <input id="photo" type="file" accept="image/*" capture="environment" />
+        </div>
       </div>
-      <div><label for="note">Notering</label><textarea id="note" rows="2"></textarea></div>
+      <div>
+        <label for="note">Notering</label>
+        <textarea id="note" rows="2" placeholder="Valfri notering"></textarea>
+      </div>
+
       <div class="row actions">
         <button value="cancel">Avbryt</button>
         <button id="save-item" class="btn-primary" value="default">Spara</button>
@@ -172,447 +220,447 @@
   </dialog>
 
   <script>
-  // --------------- Data ---------------
-  const KEY = 'inventory_items_v1';
-  let items = [];
-  function load(){ try{ items = JSON.parse(localStorage.getItem(KEY)) || []; } catch{ items = []; } }
-  function save(){ localStorage.setItem(KEY, JSON.stringify(items)); render(); }
-  function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+    // ---------- Data ----------
+    const KEY = 'inventory_items_v1';
+    let items = [];
+    function load(){ try{ items = JSON.parse(localStorage.getItem(KEY)) || []; } catch{ items = []; } }
+    function save(){ localStorage.setItem(KEY, JSON.stringify(items)); render(); }
+    function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
-  // --------------- UI refs ---------------
-  const tbody = document.getElementById('tbody');
-  const emptyEl = document.getElementById('empty');
-  const searchEl = document.getElementById('search');
-  const filterLocEl = document.getElementById('filter-location');
-  const minQtyEl = document.getElementById('min-qty');
+    // ---------- UI refs ----------
+    const tbody = document.getElementById('tbody');
+    const emptyEl = document.getElementById('empty');
+    const searchEl = document.getElementById('search');
+    const filterLocEl = document.getElementById('filter-location');
+    const minQtyEl = document.getElementById('min-qty');
 
-  function render(){
-    const q = (searchEl.value || '').toLowerCase();
-    const fl = (filterLocEl.value || '').toLowerCase();
-    const mq = parseInt(minQtyEl.value || '0', 10);
+    function render(){
+      const q = (searchEl.value || '').toLowerCase();
+      const fl = (filterLocEl.value || '').toLowerCase();
+      const mq = parseInt(minQtyEl.value || '0', 10);
 
-    const filtered = items.filter(it=>{
-      const hay = [it.code, it.name, it.location, it.note].join(' ').toLowerCase();
-      const passQ = !q || hay.includes(q);
-      const passLoc = !fl || (it.location || '').toLowerCase().includes(fl);
-      const passQty = isNaN(mq) ? true : (Number(it.qty) >= mq);
-      return passQ && passLoc && passQty;
-    });
+      const filtered = items.filter(it=>{
+        const hay = [it.code, it.name, it.location, it.note].join(' ').toLowerCase();
+        const passQ = !q || hay.includes(q);
+        const passLoc = !fl || (it.location || '').toLowerCase().includes(fl);
+        const passQty = isNaN(mq) ? true : (it.qty >= mq);
+        return passQ && passLoc && passQty;
+      });
 
-    tbody.innerHTML = '';
-    emptyEl.style.display = filtered.length ? 'none' : 'block';
+      tbody.innerHTML = '';
+      emptyEl.style.display = filtered.length ? 'none' : 'block';
 
-    for (const it of filtered) {
-      const tr = document.createElement('tr');
+      for (const it of filtered) {
+        const tr = document.createElement('tr');
 
-      const tdImg = document.createElement('td');
-      if (it.photo) {
-        const img = document.createElement('img');
-        img.src = it.photo; img.alt = it.name || it.code || 'bild';
-        img.className = 'img-thumb'; tdImg.appendChild(img);
-      } else tdImg.innerHTML = '<span class="hint">—</span>';
+        const tdImg = document.createElement('td');
+        if (it.photo) {
+          const img = document.createElement('img');
+          img.src = it.photo; img.alt = it.name || it.code || 'bild';
+          img.className = 'img-thumb'; tdImg.appendChild(img);
+        } else tdImg.innerHTML = '<span class="hint">—</span>';
 
-      const tdCode = document.createElement('td'); tdCode.textContent = it.code || '—';
-      const tdName = document.createElement('td'); tdName.textContent = it.name || '—';
+        const tdCode = document.createElement('td'); tdCode.textContent = it.code || '—';
+        const tdName = document.createElement('td'); tdName.textContent = it.name || '—';
 
-      const tdQty = document.createElement('td');
-      const qtyWrap = document.createElement('div'); qtyWrap.className = 'actions';
-      const minus = document.createElement('button'); minus.textContent = '−';
-      const qtyVal = document.createElement('span'); qtyVal.textContent = String(it.qty || 0); qtyVal.className = 'badge';
-      const plus = document.createElement('button'); plus.textContent = '+';
-      minus.addEventListener('click',(e)=>{e.preventDefault(); changeQty(it.id,-1);});
-      plus.addEventListener('click',(e)=>{e.preventDefault(); changeQty(it.id,+1);});
-      qtyWrap.append(minus, qtyVal, plus); tdQty.appendChild(qtyWrap);
+        const tdQty = document.createElement('td');
+        const qtyWrap = document.createElement('div'); qtyWrap.className = 'actions';
+        const minus = document.createElement('button'); minus.textContent = '−';
+        const qtyVal = document.createElement('span'); qtyVal.textContent = String(it.qty); qtyVal.className = 'badge';
+        const plus = document.createElement('button'); plus.textContent = '+';
+        minus.addEventListener('click',(e)=>{e.preventDefault(); changeQty(it.id,-1);});
+        plus.addEventListener('click',(e)=>{e.preventDefault(); changeQty(it.id,+1);});
+        qtyWrap.append(minus, qtyVal, plus); tdQty.appendChild(qtyWrap);
 
-      const tdLoc = document.createElement('td'); tdLoc.textContent = it.location || '—';
-      const tdNote = document.createElement('td'); tdNote.textContent = it.note || '—';
+        const tdLoc = document.createElement('td'); tdLoc.textContent = it.location || '—';
+        const tdNote = document.createElement('td'); tdNote.textContent = it.note || '—';
 
-      const tdAct = document.createElement('td'); tdAct.className='actions';
-      const bEdit = document.createElement('button'); bEdit.textContent='✏️ Redigera';
-      const bDel  = document.createElement('button'); bDel.textContent='🗑️ Radera'; bDel.className='btn-danger';
-      bEdit.addEventListener('click', ()=> openEdit(it.id));
-      bDel.addEventListener('click', ()=> { if(confirm('Radera artikeln?')) { items = items.filter(x=>x.id!==it.id); save(); } });
-      tdAct.append(bEdit,bDel);
+        const tdAct = document.createElement('td'); tdAct.className='actions';
+        const bEdit = document.createElement('button'); bEdit.textContent='✏️ Redigera';
+        const bDel  = document.createElement('button'); bDel.textContent='🗑️ Radera'; bDel.className='btn-danger';
+        bEdit.addEventListener('click', ()=> openEdit(it.id));
+        bDel.addEventListener('click', ()=> { if(confirm('Radera artikeln?')) { items = items.filter(x=>x.id!==it.id); save(); } });
+        tdAct.append(bEdit,bDel);
 
-      /* etiketter för mobilkort */
-      tdImg.dataset.label = 'Bild';
-      tdCode.dataset.label = 'Kod';
-      tdName.dataset.label = 'Namn';
-      tdQty.dataset.label  = 'Antal';
-      tdLoc.dataset.label  = 'Plats';
-      tdNote.dataset.label = 'Notering';
-      tdAct.dataset.label  = 'Åtgärder';
+        /* etiketter för mobilkort */
+        tdImg.dataset.label = 'Bild';
+        tdCode.dataset.label = 'Kod';
+        tdName.dataset.label = 'Namn';
+        tdQty.dataset.label  = 'Antal';
+        tdLoc.dataset.label  = 'Plats';
+        tdNote.dataset.label = 'Notering';
+        tdAct.dataset.label  = 'Åtgärder';
 
-      tr.append(tdImg, tdCode, tdName, tdQty, tdLoc, tdNote, tdAct);
-      tbody.appendChild(tr);
-    }
-  }
-
-  function changeQty(id, delta){
-    const it = items.find(x=>x.id===id); if(!it) return;
-    it.qty = Math.max(0, (parseInt(it.qty||0,10) || 0) + delta);
-    save();
-  }
-
-  // --------------- Skanning med Quagga ---------------
-  const dlgScan = document.getElementById('dlg-scan');
-  const scanStatus = document.getElementById('scan-status');
-  let quaggaRunning = false;
-
-  function startScan(){
-    try{
-      dlgScan.showModal();
-      scanStatus.textContent = 'Startar kamera…';
-
-      if (!window.Quagga) {
-        alert("Quagga kunde inte laddas.");
-        dlgScan.close();
-        return;
+        tr.append(tdImg, tdCode, tdName, tdQty, tdLoc, tdNote, tdAct);
+        tbody.appendChild(tr);
       }
+    }
 
-      Quagga.init({
-        inputStream: {
-          type: "LiveStream",
-          target: document.querySelector('#scan-box'),
-          constraints: {
-            facingMode: "environment",
-            width: { ideal: 1280 }, height: { ideal: 720 },
-            aspectRatio: { ideal: 1.777 }
-          }
-        },
-        decoder: {
-          readers: [
-            "ean_reader","ean_8_reader","code_128_reader","code_39_reader",
-            "upc_reader","upc_e_reader","i2of5_reader"
-          ]
-        },
-        locate: true,
-        numOfWorkers: 0 // iOS/Safari
-      }, function(err) {
-        if (err) {
-          alert('Kunde inte starta skanning: ' + err.message);
+    function changeQty(id, delta){
+      const it = items.find(x=>x.id===id); if(!it) return;
+      it.qty = Math.max(0, (parseInt(it.qty||0,10) || 0) + delta);
+      save();
+    }
+
+    // ---------- Skanning med Quagga ----------
+    const dlgScan = document.getElementById('dlg-scan');
+    const scanStatus = document.getElementById('scan-status');
+    let quaggaRunning = false;
+
+    function startScan(){
+      try{
+        dlgScan.showModal();
+        scanStatus.textContent = 'Startar kamera…';
+
+        if (!window.Quagga) {
+          alert("Quagga kunde inte laddas.");
           dlgScan.close();
           return;
         }
-        Quagga.start();
-        quaggaRunning = true;
-        scanStatus.textContent = 'Sikta kameran mot streckkoden…';
-      });
 
-      Quagga.onDetected(onDetected);
-
-    } catch(e){
-      alert('Kunde inte starta skanning: ' + e.message);
-      try { dlgScan.close(); } catch {}
-    }
-  }
-
-  function onDetected(result){
-    const code = result && result.codeResult && result.codeResult.code;
-    if (!code) return;
-    stopScan();
-    openAdd({ code, name:'', qty:1, location:'', note:'' });
-  }
-
-  function stopScan(){
-    try{
-      Quagga.offDetected(onDetected);
-      if (quaggaRunning) { Quagga.stop(); quaggaRunning = false; }
-    } finally {
-      dlgScan.close();
-    }
-  }
-
-  // --------------- Lägg till / redigera ---------------
-  const dlgAdd = document.getElementById('dlg-add');
-  const editId = document.getElementById('edit-id');
-  const fCode = document.getElementById('code');
-  const fName = document.getElementById('name');
-  const fQty  = document.getElementById('qty');
-  const fLoc  = document.getElementById('location');
-  const fNote = document.getElementById('note');
-  const fPhoto= document.getElementById('photo');
-
-  function openAdd(prefill={}){
-    editId.value = prefill.id || '';
-    fCode.value = prefill.code || '';
-    fName.value = prefill.name || '';
-    fQty.value  = prefill.qty != null ? prefill.qty : 1;
-    fLoc.value  = prefill.location || '';
-    fNote.value = prefill.note || '';
-    fPhoto.value = '';
-    dlgAdd.showModal();
-    if (dlgScan.open) stopScan();
-  }
-  function openEdit(id){
-    const it = items.find(x=>x.id===id); if(!it) return;
-    openAdd(it);
-  }
-  function fileToDataURL(file){
-    return new Promise((resolve,reject)=>{
-      const r = new FileReader();
-      r.onload = ()=>resolve(r.result);
-      r.onerror = reject;
-      r.readAsDataURL(file);
-    });
-  }
-  document.getElementById('save-item').addEventListener('click', async (e)=>{
-    e.preventDefault();
-    const id = editId.value || uid();
-    const code = fCode.value.trim();
-    const name = fName.value.trim();
-    const qty  = Math.max(0, parseInt(fQty.value || '0', 10) || 0);
-    const location = fLoc.value.trim();
-    const note = fNote.value.trim();
-
-    let photoData = undefined;
-    if (fPhoto.files && fPhoto.files[0]) photoData = await fileToDataURL(fPhoto.files[0]);
-
-    const exists = items.find(x=>x.id===id);
-    if (exists){
-      exists.code = code; exists.name = name; exists.qty = qty; exists.location = location; exists.note = note;
-      if (photoData) exists.photo = photoData;
-    } else {
-      items.push({id, code, name, qty, location, note, photo: photoData});
-    }
-    save();
-    dlgAdd.close();
-  });
-
-  // --------------- CSV ---------------
-  function toCSV(rows){
-    return rows.map(r=>r.map(v=>{
-      const s = (v==null?'':String(v));
-      const esc = s.replace(/"/g,'""').replace(/\r?\n/g,' ');
-      return `"${esc}"`;
-    }).join(',')).join('\n');
-  }
-  function download(filename, data, mime='text/csv;charset=utf-8'){
-    const blob = new Blob([data], {type:mime});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
-  }
-  function exportCSV(){
-    const rows = [['id','code','name','qty','location','note','photoDataUrl']];
-    for (const it of items) rows.push([it.id, it.code||'', it.name||'', it.qty||0, it.location||'', it.note||'', it.photo||'']);
-    download('inventering.csv', toCSV(rows));
-  }
-
-  // --------------- PDF (miniatyr + summering) ---------------
-  function loadImage(src){
-    return new Promise((resolve,reject)=>{
-      const img = new Image();
-      img.onload = ()=> resolve(img);
-      img.onerror = reject;
-      img.src = src;
-    });
-  }
-  function mm(px){ return px * 0.75; }
-
-  async function exportPDF(){
-    const { jsPDF } = window.jspdf || {};
-    if (!jsPDF || !window.jspdf || !('autoTable' in (jsPDF.API || {}))){
-      alert('PDF-biblioteket har inte laddats än. Testa igen om några sekunder.');
-      return;
-    }
-    const rows = items.map(it => ({
-      photo: it.photo || null,
-      code: it.code || '',
-      name: it.name || '',
-      qty: Number.isFinite(it.qty) ? it.qty : 0,
-      location: it.location || '',
-      note: it.note || ''
-    }));
-
-    const photos = {};
-    for (const r of rows){
-      if (r.photo && !photos[r.photo]){
-        try { photos[r.photo] = await loadImage(r.photo); } catch { photos[r.photo] = null; }
-      }
-    }
-
-    const doc = new jsPDF({unit:'pt', format:'a4'});
-    const fmt = new Date().toLocaleString('sv-SE');
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(14);
-    doc.text('Offert På Språng – Inventeringsrapport', 40, 40);
-    doc.setFont('helvetica','normal'); doc.setFontSize(10);
-    doc.text(`Genererad: ${fmt}`, 40, 58);
-    doc.text(`Antal artiklar: ${rows.length}`, 40, 72);
-
-    const head = [['Bild', 'Kod', 'Namn', 'Antal', 'Plats', 'Notering']];
-    const body = rows.map(r => [ '', r.code, r.name, String(r.qty), r.location, r.note ]);
-
-    doc.autoTable({
-      startY: 90,
-      head, body,
-      styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
-      headStyles: { fillColor: [34, 211, 238] },
-      columnStyles: {
-        0: { cellWidth: 36 },
-        1: { cellWidth: 120 },
-        2: { cellWidth: 160 },
-        3: { cellWidth: 50, halign:'right' },
-        4: { cellWidth: 100 },
-        5: { cellWidth: 'auto' }
-      },
-      didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 0) {
-          const r = rows[data.row.index];
-          if (r.photo) data.cell.styles.minCellHeight = 30;
-        }
-      },
-      didDrawCell: (data) => {
-        if (data.section === 'body' && data.column.index === 0) {
-          const r = rows[data.row.index];
-          const img = r.photo ? photos[r.photo] : null;
-          if (img) {
-            const size = 24;
-            const w = mm(size), h = mm(size);
-            const x = data.cell.x + 4;
-            const y = data.cell.y + (data.cell.height - h) / 2;
-            try { doc.addImage(img, 'PNG', x, y, w, h); } catch {}
+        Quagga.init({
+          inputStream: {
+            type: "LiveStream",
+            target: document.querySelector('#scan-box'),
+            constraints: {
+              facingMode: "environment",
+              width: { ideal: 1280 }, height: { ideal: 720 },
+              aspectRatio: { ideal: 1.777 }
+            }
+          },
+          decoder: {
+            readers: [
+              "ean_reader","ean_8_reader","code_128_reader","code_39_reader",
+              "upc_reader","upc_e_reader","i2of5_reader"
+            ]
+          },
+          locate: true,
+          numOfWorkers: 0 // iOS/Safari
+        }, function(err) {
+          if (err) {
+            alert('Kunde inte starta skanning: ' + err.message);
+            dlgScan.close();
+            return;
           }
-        }
-      },
-      didDrawPage: (data) => {
-        const page = doc.internal.pageSize;
-        const ph = page.height || page.getHeight();
-        doc.setFontSize(9); doc.setTextColor(130);
-        doc.text('© Reklamgiganten AB – App skapad av Offert På Språng', 40, ph - 20);
-      }
-    });
+          Quagga.start();
+          quaggaRunning = true;
+          scanStatus.textContent = 'Sikta kameran mot streckkoden…';
+        });
 
-    // Summering per plats
-    const totalsByLocation = new Map();
-    for (const r of rows){
-      const key = (r.location || '—').trim() || '—';
-      if (!totalsByLocation.has(key)) totalsByLocation.set(key, {rows:0, qty:0});
-      const t = totalsByLocation.get(key);
-      t.rows += 1; t.qty += (Number.isFinite(r.qty) ? r.qty : 0);
+        Quagga.onDetected(onDetected);
+
+      } catch(e){
+        alert('Kunde inte starta skanning: ' + e.message);
+        try { dlgScan.close(); } catch {}
+      }
     }
-    const sumHead = [['Plats', 'Antal rader', 'Summa antal']];
-    const sumBody = [...totalsByLocation.entries()]
-      .sort((a,b)=> a[0].localeCompare(b[0], 'sv'))
-      .map(([loc, t]) => [loc, String(t.rows), String(t.qty)]);
 
-    doc.autoTable({
-      head: sumHead,
-      body: sumBody,
-      styles: { font: 'helvetica', fontSize: 10, cellPadding: 4 },
-      headStyles: { fillColor: [22, 163, 74], textColor: 255 },
-      startY: doc.lastAutoTable.finalY + 20,
-      columnStyles: {
-        0: { cellWidth: 220 },
-        1: { cellWidth: 120, halign:'right' },
-        2: { cellWidth: 120, halign:'right' }
+    function onDetected(result){
+      const code = result && result.codeResult && result.codeResult.code;
+      if (!code) return;
+      stopScan();
+      openAdd({ code, name:'', qty:1, location:'', note:'' });
+    }
+
+    function stopScan(){
+      try{
+        Quagga.offDetected(onDetected);
+        if (quaggaRunning) { Quagga.stop(); quaggaRunning = false; }
+      } finally {
+        dlgScan.close();
       }
-    });
+    }
 
-    const totalRows = rows.length;
-    const totalQty  = rows.reduce((s,r)=> s + (Number.isFinite(r.qty) ? r.qty : 0), 0);
-    doc.setFont('helvetica','bold'); doc.setFontSize(10);
-    doc.text(`Totalt: ${totalRows} rader • ${totalQty} i antal`, 40, doc.lastAutoTable.finalY + 18);
+    // ---------- Lägg till / redigera ----------
+    const dlgAdd = document.getElementById('dlg-add');
+    const editId = document.getElementById('edit-id');
+    const fCode = document.getElementById('code');
+    const fName = document.getElementById('name');
+    const fQty  = document.getElementById('qty');
+    const fLoc  = document.getElementById('location');
+    const fNote = document.getElementById('note');
+    const fPhoto= document.getElementById('photo');
 
-    doc.save('inventeringsrapport.pdf');
-  }
-
-  // --------------- Import CSV ---------------
-  function parseCSV(text){
-    const lines = text.replace(/\r/g,'').split('\n').filter(l=>l.trim().length>0);
-    if (!lines.length) return [];
-    const head = splitCSVLine(lines[0]).map(h=>h.trim().toLowerCase());
-    const ix = (k)=> head.indexOf(k);
-    const out = [];
-    for (let i=1;i<lines.length;i++){
-      const cols = splitCSVLine(lines[i]);
-      const get = (k)=> { const j=ix(k); return j>=0 ? (cols[j]||'') : ''; };
-      out.push({
-        id:get('id')||'', code:get('code')||'', name:get('name')||'',
-        qty: parseInt(get('qty')||'0',10)||0, location:get('location')||'',
-        note:get('note')||'', photo:get('photodataurl')||''
+    function openAdd(prefill={}){
+      editId.value = prefill.id || '';
+      fCode.value = prefill.code || '';
+      fName.value = prefill.name || '';
+      fQty.value  = prefill.qty != null ? prefill.qty : 1;
+      fLoc.value  = prefill.location || '';
+      fNote.value = prefill.note || '';
+      fPhoto.value = '';
+      dlgAdd.showModal();
+      if (dlgScan.open) stopScan();
+    }
+    function openEdit(id){
+      const it = items.find(x=>x.id===id); if(!it) return;
+      openAdd(it);
+    }
+    function fileToDataURL(file){
+      return new Promise((resolve,reject)=>{
+        const r = new FileReader();
+        r.onload = ()=>resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
       });
     }
-    return out;
-  }
-  function splitCSVLine(line){
-    const res=[]; let cur=''; let inQ=false;
-    for (let i=0;i<line.length;i++){
-      const c=line[i];
-      if (inQ){
-        if (c==='"' && line[i+1]==='"'){ cur+='"'; i++; }
-        else if (c==='"'){ inQ=false; }
-        else { cur+=c; }
+    document.getElementById('save-item').addEventListener('click', async (e)=>{
+      e.preventDefault();
+      const id = editId.value || uid();
+      const code = fCode.value.trim();
+      const name = fName.value.trim();
+      const qty  = Math.max(0, parseInt(fQty.value || '0', 10) || 0);
+      const location = fLoc.value.trim();
+      const note = fNote.value.trim();
+
+      let photoData = undefined;
+      if (fPhoto.files && fPhoto.files[0]) photoData = await fileToDataURL(fPhoto.files[0]);
+
+      const exists = items.find(x=>x.id===id);
+      if (exists){
+        exists.code = code; exists.name = name; exists.qty = qty; exists.location = location; exists.note = note;
+        if (photoData) exists.photo = photoData;
       } else {
-        if (c===','){ res.push(cur); cur=''; }
-        else if (c==='"'){ inQ=true; }
-        else { cur+=c; }
+        items.push({id, code, name, qty, location, note, photo: photoData});
       }
-    }
-    res.push(cur);
-    return res;
-  }
-  async function importCSVFile(file){
-    const text = await file.text();
-    const rows = parseCSV(text);
-    if (!rows.length){ alert('Kunde inte läsa CSV (saknar rader).'); return; }
-    let added=0, updated=0;
-    for (const r of rows){
-      let it = r.id ? items.find(x=>x.id===r.id) : null;
-      if (!it && r.code) it = items.find(x=>x.code===r.code);
-      if (it){
-        it.code = r.code || it.code;
-        it.name = r.name || it.name;
-        it.qty = (typeof r.qty==='number' ? r.qty : it.qty);
-        it.location = r.location || it.location;
-        it.note = r.note || it.note;
-        if (r.photo) it.photo = r.photo;
-        updated++;
-      } else {
-        items.push({ id:r.id||uid(), code:r.code||'', name:r.name||'', qty:r.qty||0, location:r.location||'', note:r.note||'', photo:r.photo||'' });
-        added++;
-      }
-    }
-    save();
-    alert(`Import klar: ${added} tillagda, ${updated} uppdaterade.`);
-  }
-
-  // --------------- Rensa ---------------
-  function clearAll(){
-    if (!confirm('Rensa alla artiklar? Detta går inte att ångra.')) return;
-    localStorage.removeItem(KEY);
-    items = [];
-    render();
-  }
-
-  // --------------- Event wiring ---------------
-  document.getElementById('btn-scan').addEventListener('click', startScan);
-  document.getElementById('stop-scan').addEventListener('click', stopScan);
-  document.getElementById('btn-add').addEventListener('click', ()=>openAdd({qty:1}));
-  document.getElementById('btn-export').addEventListener('click', exportCSV);
-  document.getElementById('btn-export-pdf').addEventListener('click', exportPDF);
-  document.getElementById('btn-clear').addEventListener('click', clearAll);
-  [searchEl, filterLocEl, minQtyEl].forEach(el => el.addEventListener('input', render));
-
-  const fileImport = document.getElementById('file-import');
-  document.getElementById('btn-import').addEventListener('click', ()=> fileImport.click());
-  fileImport.addEventListener('change', ()=> {
-    const f = fileImport.files?.[0];
-    if (f) importCSVFile(f);
-    fileImport.value = '';
-  });
-
-  // --------------- PWA (SW) ---------------
-  if ('serviceWorker' in navigator){
-    window.addEventListener('load', ()=> {
-      navigator.serviceWorker.register('./service-worker.js').catch(console.error);
+      save();
+      dlgAdd.close();
     });
-  }
 
-  // --------------- Init ---------------
-  load(); render();
+    // ---------- CSV ----------
+    function toCSV(rows){
+      return rows.map(r=>r.map(v=>{
+        const s = (v==null?'':String(v));
+        const esc = s.replace(/"/g,'""').replace(/\r?\n/g,' ');
+        return `"${esc}"`;
+      }).join(',')).join('\n');
+    }
+    function download(filename, data, mime='text/csv;charset=utf-8'){
+      const blob = new Blob([data], {type:mime});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+    }
+    function exportCSV(){
+      const rows = [['id','code','name','qty','location','note','photoDataUrl']];
+      for (const it of items) rows.push([it.id, it.code||'', it.name||'', it.qty||0, it.location||'', it.note||'', it.photo||'']);
+      download('inventering.csv', toCSV(rows));
+    }
+
+    // ---------- PDF (miniatyr + summering) ----------
+    function loadImage(src){
+      return new Promise((resolve,reject)=>{
+        const img = new Image();
+        img.onload = ()=> resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+    function mm(px){ return px * 0.75; }
+
+    async function exportPDF(){
+      const { jsPDF } = window.jspdf || {};
+      if (!jsPDF || !window.jspdf || !('autoTable' in (jsPDF.API || {}))){
+        alert('PDF-biblioteket har inte laddats än. Testa igen om några sekunder.');
+        return;
+      }
+      const rows = items.map(it => ({
+        photo: it.photo || null,
+        code: it.code || '',
+        name: it.name || '',
+        qty: Number.isFinite(it.qty) ? it.qty : 0,
+        location: it.location || '',
+        note: it.note || ''
+      }));
+
+      const photos = {};
+      for (const r of rows){
+        if (r.photo && !photos[r.photo]){
+          try { photos[r.photo] = await loadImage(r.photo); } catch { photos[r.photo] = null; }
+        }
+      }
+
+      const doc = new jsPDF({unit:'pt', format:'a4'});
+      const fmt = new Date().toLocaleString('sv-SE');
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(14);
+      doc.text('Offert På Språng – Inventeringsrapport', 40, 40);
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      doc.text(`Genererad: ${fmt}`, 40, 58);
+      doc.text(`Antal artiklar: ${rows.length}`, 40, 72);
+
+      const head = [['Bild', 'Kod', 'Namn', 'Antal', 'Plats', 'Notering']];
+      const body = rows.map(r => [ '', r.code, r.name, String(r.qty), r.location, r.note ]);
+
+      doc.autoTable({
+        startY: 90,
+        head, body,
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+        headStyles: { fillColor: [34, 211, 238] },
+        columnStyles: {
+          0: { cellWidth: 36 },
+          1: { cellWidth: 120 },
+          2: { cellWidth: 160 },
+          3: { cellWidth: 50, halign:'right' },
+          4: { cellWidth: 100 },
+          5: { cellWidth: 'auto' }
+        },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 0) {
+            const r = rows[data.row.index];
+            if (r.photo) data.cell.styles.minCellHeight = 30;
+          }
+        },
+        didDrawCell: (data) => {
+          if (data.section === 'body' && data.column.index === 0) {
+            const r = rows[data.row.index];
+            const img = r.photo ? photos[r.photo] : null;
+            if (img) {
+              const size = 24;
+              const w = mm(size), h = mm(size);
+              const x = data.cell.x + 4;
+              const y = data.cell.y + (data.cell.height - h) / 2;
+              try { doc.addImage(img, 'PNG', x, y, w, h); } catch {}
+            }
+          }
+        },
+        didDrawPage: (data) => {
+          const page = doc.internal.pageSize;
+          const ph = page.height || page.getHeight();
+          doc.setFontSize(9); doc.setTextColor(130);
+          doc.text('© Reklamgiganten AB – App skapad av Offert På Språng', 40, ph - 20);
+        }
+      });
+
+      // Summering per plats
+      const totalsByLocation = new Map();
+      for (const r of rows){
+        const key = (r.location || '—').trim() || '—';
+        if (!totalsByLocation.has(key)) totalsByLocation.set(key, {rows:0, qty:0});
+        const t = totalsByLocation.get(key);
+        t.rows += 1; t.qty += (Number.isFinite(r.qty) ? r.qty : 0);
+      }
+      const sumHead = [['Plats', 'Antal rader', 'Summa antal']];
+      const sumBody = [...totalsByLocation.entries()]
+        .sort((a,b)=> a[0].localeCompare(b[0], 'sv'))
+        .map(([loc, t]) => [loc, String(t.rows), String(t.qty)]);
+
+      doc.autoTable({
+        head: sumHead,
+        body: sumBody,
+        styles: { font: 'helvetica', fontSize: 10, cellPadding: 4 },
+        headStyles: { fillColor: [22, 163, 74], textColor: 255 },
+        startY: doc.lastAutoTable.finalY + 20,
+        columnStyles: {
+          0: { cellWidth: 220 },
+          1: { cellWidth: 120, halign:'right' },
+          2: { cellWidth: 120, halign:'right' }
+        }
+      });
+
+      const totalRows = rows.length;
+      const totalQty  = rows.reduce((s,r)=> s + (Number.isFinite(r.qty) ? r.qty : 0), 0);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.text(`Totalt: ${totalRows} rader • ${totalQty} i antal`, 40, doc.lastAutoTable.finalY + 18);
+
+      doc.save('inventeringsrapport.pdf');
+    }
+
+    // ---------- Import CSV ----------
+    function parseCSV(text){
+      const lines = text.replace(/\r/g,'').split('\n').filter(l=>l.trim().length>0);
+      if (!lines.length) return [];
+      const head = splitCSVLine(lines[0]).map(h=>h.trim().toLowerCase());
+      const ix = (k)=> head.indexOf(k);
+      const out = [];
+      for (let i=1;i<lines.length;i++){
+        const cols = splitCSVLine(lines[i]);
+        const get = (k)=> { const j=ix(k); return j>=0 ? (cols[j]||'') : ''; };
+        out.push({
+          id:get('id')||'', code:get('code')||'', name:get('name')||'',
+          qty: parseInt(get('qty')||'0',10)||0, location:get('location')||'',
+          note:get('note')||'', photo:get('photodataurl')||''
+        });
+      }
+      return out;
+    }
+    function splitCSVLine(line){
+      const res=[]; let cur=''; let inQ=false;
+      for (let i=0;i<line.length;i++){
+        const c=line[i];
+        if (inQ){
+          if (c==='"' && line[i+1]==='"'){ cur+='"'; i++; }
+          else if (c==='"'){ inQ=false; }
+          else { cur+=c; }
+        } else {
+          if (c===','){ res.push(cur); cur=''; }
+          else if (c==='"'){ inQ=true; }
+          else { cur+=c; }
+        }
+      }
+      res.push(cur);
+      return res;
+    }
+    async function importCSVFile(file){
+      const text = await file.text();
+      const rows = parseCSV(text);
+      if (!rows.length){ alert('Kunde inte läsa CSV (saknar rader).'); return; }
+      let added=0, updated=0;
+      for (const r of rows){
+        let it = r.id ? items.find(x=>x.id===r.id) : null;
+        if (!it && r.code) it = items.find(x=>x.code===r.code);
+        if (it){
+          it.code = r.code || it.code;
+          it.name = r.name || it.name;
+          it.qty = (typeof r.qty==='number' ? r.qty : it.qty);
+          it.location = r.location || it.location;
+          it.note = r.note || it.note;
+          if (r.photo) it.photo = r.photo;
+          updated++;
+        } else {
+          items.push({ id:r.id||uid(), code:r.code||'', name:r.name||'', qty:r.qty||0, location:r.location||'', note:r.note||'', photo:r.photo||'' });
+          added++;
+        }
+      }
+      save();
+      alert(`Import klar: ${added} tillagda, ${updated} uppdaterade.`);
+    }
+
+    // ---------- Rensa ----------
+    function clearAll(){
+      if (!confirm('Rensa alla artiklar? Detta går inte att ångra.')) return;
+      localStorage.removeItem(KEY);
+      items = [];
+      render();
+    }
+
+    // ---------- Event wiring ----------
+    document.getElementById('btn-scan').addEventListener('click', startScan);
+    document.getElementById('stop-scan').addEventListener('click', stopScan);
+    document.getElementById('btn-add').addEventListener('click', ()=>openAdd({qty:1}));
+    document.getElementById('btn-export').addEventListener('click', exportCSV);
+    document.getElementById('btn-export-pdf').addEventListener('click', exportPDF);
+    document.getElementById('btn-clear').addEventListener('click', clearAll);
+    [searchEl, filterLocEl, minQtyEl].forEach(el => el.addEventListener('input', render));
+
+    const fileImport = document.getElementById('file-import');
+    document.getElementById('btn-import').addEventListener('click', ()=> fileImport.click());
+    fileImport.addEventListener('change', ()=> {
+      const f = fileImport.files?.[0];
+      if (f) importCSVFile(f);
+      fileImport.value = '';
+    });
+
+    // ---------- PWA ----------
+    if ('serviceWorker' in navigator){
+      window.addEventListener('load', ()=> {
+        navigator.serviceWorker.register('./service-worker.js').catch(console.error);
+      });
+    }
+
+    // ---------- Init ----------
+    load(); render();
   </script>
 </body>
 </html>
