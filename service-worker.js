@@ -1,5 +1,5 @@
 // ----- Offert På Språng – Inventeringsapp service worker -----
-const CACHE_NAME = 'inventering-v9';
+const CACHE_NAME = 'inventering-v10';
 const ASSETS = [
   './',
   './index.html',
