@@ -1,14 +1,16 @@
 {
   "name": "Offert På Språng – Inventeringsapp",
   "short_name": "Inventering",
-  "start_url": ".",
-  "scope": ".",
+  "id": "/Inventeringsapp/",
+  "start_url": "/Inventeringsapp/",
+  "scope": "/Inventeringsapp/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0f1115",
   "theme_color": "#111418",
-  "description": "Skanna streckkod, fota, lägg till manuellt, exportera CSV. Offline-stöd. Reklam för Offert På Språng.",
+  "description": "Skanna streckkod, fota, lägg till manuellt och exportera CSV/PDF. Offline-stöd.",
   "icons": [
-    { "src": "Icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "Icon-512.png", "sizes": "192x192", "type": "image/png", "purpose": "any" }
+    { "src": "/Inventeringsapp/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/Inventeringsapp/icon-512.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" }
   ]
 }
