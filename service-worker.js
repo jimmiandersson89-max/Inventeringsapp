@@ -1,34 +1,43 @@
-// Enkel cache-first SW för statiska filer
-const CACHE_NAME = 'inventering-v7';
+// Enkel cache-first SW för GitHub Pages
+const CACHE_NAME = 'inventeringsapp-v2';
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './service-worker.js',
-  './Icon-512.png'
-  // Lägg till './Icon-192.png' om du använder en separat 192-ikon
+  '/Inventeringsapp/',
+  '/Inventeringsapp/index.html',
+  '/Inventeringsapp/manifest.webmanifest',
+  '/Inventeringsapp/service-worker.js',
+  '/Inventeringsapp/icon-512.png'
 ];
 
+// Installera och lägg filer i cache
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
+  self.skipWaiting();
 });
 
+// Rensa gamla cachar vid uppgradering
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     )
   );
+  self.clients.claim();
 });
 
+// Cache-first för GET
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  // Cache-first för GET-förfrågningar
-  if (req.method === 'GET') {
+  if (req.method !== 'GET') return;
+
+  // Fånga navigeringar (SPA/PWA) – serva index vid 404 på djupa länkar
+  if (req.mode === 'navigate') {
     event.respondWith(
-      caches.match(req).then(cached => cached || fetch(req))
+      fetch(req).catch(() => caches.match('/Inventeringsapp/index.html'))
     );
+    return;
   }
+
+  event.respondWith(
+    caches.match(req).then((cached) => cached || fetch(req))
+  );
 });
