@@ -30,16 +30,20 @@
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif}
     header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between;background:#121622;position:sticky;top:0;z-index:10}
     header h1{margin:0;font-size:18px}
-    .wrap{max-width:1100px;margin:0 auto;padding:16px;padding-bottom:92px}
+
+    .wrap{max-width:1100px;margin:0 auto;padding:16px;padding-bottom:96px}
     .row{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
     .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+
     button,.btn{background:#243149;border:1px solid var(--line);color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer}
     button:hover{outline:1px solid var(--accent)}
     .btn-primary{background:var(--ok);border-color:#0d8e3c}
     .btn-danger{background:#3a1920;border-color:#5d1d28;color:#ffb7c2}
     .btn-accent{background:#16323a;border-color:#1b5a65}
+
     input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#111825;color:var(--text)}
     label{font-size:12px;color:var(--muted)}
+
     table{width:100%;border-collapse:collapse}
     th,td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
     th{color:var(--muted);text-align:left;font-weight:600}
@@ -70,6 +74,58 @@
     /* Skannerruta */
     #scan-box { width:100%; height:60vh; position:relative; overflow:hidden; background:#000; border-radius:10px }
     #scan-box canvas, #scan-box video { max-width:100%; width:100%; }
+
+    /* ===== Mobilförbättringar: kort + sticky toolbar + kompakt banner ===== */
+    @media (max-width: 520px){
+      .wrap{ padding:12px 12px 96px; }
+      header{ padding:12px 14px; }
+      header h1{ font-size:16px; }
+      .card{ padding:12px; border-radius:10px; }
+
+      /* sticky toolbar */
+      .toolbar-stick{
+        position: sticky; top: 56px; z-index: 15;
+        background: rgba(15,17,21,.85); backdrop-filter: blur(6px);
+        border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+      }
+      .toolbar{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+      .toolbar > *{ width:100%; }
+      button,.btn{ padding:12px 14px; border-radius:12px; font-size:15px; }
+
+      .grid-3{ grid-template-columns: 1fr; gap:10px; }
+      .grid-2{ grid-template-columns: 1fr; gap:10px; }
+      label{ font-size:11px; }
+      input,select,textarea{ padding:12px; font-size:15px; }
+
+      /* Visa varje rad som kort */
+      table thead{ display:none; }
+      table, tbody{ display:block; }
+      tbody tr{
+        display:block; background:var(--card); border:1px solid var(--line);
+        border-radius:12px; padding:10px; margin-bottom:12px;
+      }
+      tbody td{
+        display:grid; grid-template-columns:110px 1fr; gap:8px;
+        padding:6px 0; border:none; align-items:center;
+      }
+      tbody td::before{
+        content: attr(data-label); color: var(--muted); font-size:12px;
+      }
+      tbody td:first-child{ grid-template-columns:80px 1fr; }
+      .img-thumb{ width:72px; height:72px; }
+
+      .actions{ justify-content:flex-start; }
+      .nowrap{ white-space:normal; }
+
+      /* Banner kompakt + stäng */
+      .promo .promo-inner{
+        flex-direction:column; align-items:stretch; text-align:center;
+        gap:8px; padding:10px 12px;
+      }
+      .promo .small{ font-size:13px; line-height:1.35; }
+      .promo .cta{ margin-left:0; }
+      .promo .cta .btn{ width:100%; padding:12px; }
+    }
   </style>
 </head>
 <body>
@@ -77,9 +133,9 @@
     <h1>📦 Offert På Språng – Inventeringsapp</h1>
   </header>
 
-  <!-- Knappar under rubriken -->
+  <!-- Sticky knapprad -->
   <div class="wrap">
-    <div class="row card">
+    <div class="row toolbar-stick">
       <div class="toolbar">
         <button id="btn-scan" class="btn-accent">📷 Skanna streckkod</button>
         <button id="btn-add" class="btn-primary">➕ Lägg till manuellt</button>
@@ -115,13 +171,7 @@
       <table id="table">
         <thead>
           <tr>
-            <th>Bild</th>
-            <th>Kod</th>
-            <th>Namn</th>
-            <th>Antal</th>
-            <th>Plats</th>
-            <th>Notering</th>
-            <th class="nowrap">Åtgärder</th>
+            <th>Bild</th><th>Kod</th><th>Namn</th><th>Antal</th><th>Plats</th><th>Notering</th><th class="nowrap">Åtgärder</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -132,14 +182,14 @@
     <details class="row">
       <summary>ℹ️ Tips & behörigheter</summary>
       <div class="card" style="margin-top:8px">
-        • På iPhone/iPad krävs **https** (du har det via github.io).<br>
-        • Ge webbläsaren **Kamera-tillstånd** (tryck på lås-ikonen i adressfältet).<br>
-        • Om kameran vägrar starta: bumpa service worker-version, stäng alla flikar, öppna igen med `?v=7`.
+        • På iPhone/iPad krävs **https** (github.io har det).<br>
+        • Ge webbläsaren **Kamera-tillstånd** (lås-ikonen i adressfältet).<br>
+        • Om kameran vägrar starta: bumpa service worker-version, stäng alla flikar, öppna igen med `?v=8`.
       </div>
     </details>
   </div>
 
-  <!-- Banner -->
+  <!-- Banner (stängbar) -->
   <div class="promo">
     <div class="promo-inner">
       <div class="logo-dot"></div>
@@ -149,6 +199,7 @@
       </div>
       <div class="cta">
         <button onclick="window.open('https://jimmiandersson89-max.github.io/Priskalkylator/','_blank')" class="btn">Visa nu</button>
+        <button id="promo-close" class="btn" style="margin-left:8px;">Stäng</button>
       </div>
     </div>
   </div>
@@ -272,6 +323,15 @@
         bDel.addEventListener('click', ()=> { if(confirm('Radera artikeln?')) { items = items.filter(x=>x.id!==it.id); save(); } });
         tdAct.append(bEdit,bDel);
 
+        /* etiketter för mobilkort */
+        tdImg.dataset.label = 'Bild';
+        tdCode.dataset.label = 'Kod';
+        tdName.dataset.label = 'Namn';
+        tdQty.dataset.label  = 'Antal';
+        tdLoc.dataset.label  = 'Plats';
+        tdNote.dataset.label = 'Notering';
+        tdAct.dataset.label  = 'Åtgärder';
+
         tr.append(tdImg, tdCode, tdName, tdQty, tdLoc, tdNote, tdAct);
         tbody.appendChild(tr);
       }
@@ -316,7 +376,7 @@
             ]
           },
           locate: true,
-          numOfWorkers: 0 // iOS/Safari kräver 0
+          numOfWorkers: 0 // iOS/Safari
         }, function(err) {
           if (err) {
             alert('Kunde inte starta skanning: ' + err.message);
@@ -408,7 +468,7 @@
       dlgAdd.close();
     });
 
-    // ---------- Export CSV ----------
+    // ---------- CSV ----------
     function toCSV(rows){
       return rows.map(r=>r.map(v=>{
         const s = (v==null?'':String(v));
@@ -429,7 +489,7 @@
       download('inventering.csv', toCSV(rows));
     }
 
-    // ---------- PDF-rapport (miniatyr + summering per plats) ----------
+    // ---------- PDF (miniatyr + summering) ----------
     function loadImage(src){
       return new Promise((resolve,reject)=>{
         const img = new Image();
@@ -514,6 +574,7 @@
         }
       });
 
+      // Summering per plats
       const totalsByLocation = new Map();
       for (const r of rows){
         const key = (r.location || '—').trim() || '—';
@@ -631,6 +692,23 @@
       if (f) importCSVFile(f);
       fileImport.value = '';
     });
+
+    // ---------- Stängbar banner ----------
+    (function(){
+      const PROMO_KEY = 'promo_dismissed_v1';
+      const promo = document.querySelector('.promo');
+      if (!promo) return;
+      if (localStorage.getItem(PROMO_KEY) === '1'){
+        promo.remove(); return;
+      }
+      const btn = document.getElementById('promo-close');
+      if (btn){
+        btn.addEventListener('click', ()=>{
+          localStorage.setItem(PROMO_KEY, '1');
+          promo.remove();
+        });
+      }
+    })();
 
     // ---------- PWA ----------
     if ('serviceWorker' in navigator){
