@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Inventeringsapp">
   <link rel="apple-touch-icon" href="Icon-512.png" />
 
-  <!-- Quagga (global Quagga-variabel, funkar i Safari) -->
+  <!-- Quagga (streckkod) -->
   <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
   <!-- jsPDF + autoTable -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -53,8 +53,6 @@
     .hint{color:var(--muted);font-size:12px}
     .badge{display:inline-block;padding:2px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--muted)}
     .img-thumb{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#0b0f17}
-    details{border:1px dashed var(--line);border-radius:10px;padding:8px 10px}
-    summary{cursor:pointer;color:var(--muted)}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
     .nowrap{white-space:nowrap}
     .right{margin-left:auto}
@@ -67,22 +65,21 @@
     .promo-inner { max-width:1100px; margin:0 auto; padding:10px 16px;
       display:flex; align-items:center; gap:12px; }
     .promo .logo-dot {width:10px; height:10px; border-radius:50%; background:#32d16d; flex:0 0 auto;}
-    .promo a {color:#b8ffcb; text-decoration:underline;}
+    .promo .small { color:#d7f4dd }
     .promo .cta {margin-left:auto}
-    .cta button{background:#1d3b24;border-color:#2b6c3e}
+    .cta .btn{background:#1d3b24;border-color:#2b6c3e}
 
     /* Skannerruta */
     #scan-box { width:100%; height:60vh; position:relative; overflow:hidden; background:#000; border-radius:10px }
     #scan-box canvas, #scan-box video { max-width:100%; width:100%; }
 
-    /* ===== Mobilförbättringar: kort + sticky toolbar + kompakt banner ===== */
+    /* Mobilförbättringar */
     @media (max-width: 520px){
       .wrap{ padding:12px 12px 96px; }
       header{ padding:12px 14px; }
       header h1{ font-size:16px; }
       .card{ padding:12px; border-radius:10px; }
 
-      /* sticky toolbar */
       .toolbar-stick{
         position: sticky; top: 56px; z-index: 15;
         background: rgba(15,17,21,.85); backdrop-filter: blur(6px);
@@ -97,7 +94,6 @@
       label{ font-size:11px; }
       input,select,textarea{ padding:12px; font-size:15px; }
 
-      /* Visa varje rad som kort */
       table thead{ display:none; }
       table, tbody{ display:block; }
       tbody tr{
@@ -117,7 +113,6 @@
       .actions{ justify-content:flex-start; }
       .nowrap{ white-space:normal; }
 
-      /* Banner kompakt + stäng */
       .promo .promo-inner{
         flex-direction:column; align-items:stretch; text-align:center;
         gap:8px; padding:10px 12px;
@@ -180,16 +175,14 @@
     </div>
   </div>
 
-  <!-- Banner (stängbar) -->
+  <!-- Banner (stängbar, utan länkar) -->
   <div class="promo">
     <div class="promo-inner">
       <div class="logo-dot"></div>
       <div class="small">
-        Behöver du även skapa proffsiga offerter? <strong>Offert På Språng</strong> hjälper dig att skicka offert-PDF:er på några sekunder.
-        Testa systerappen här: <a href="https://jimmiandersson89-max.github.io/Priskalkylator/" target="_blank" rel="noopener">Öppna</a>
+        Testa gärna vår andra app också <strong>Offert På Språng</strong> – gör snabbt en offert var du än befinner dig.
       </div>
       <div class="cta">
-        <button onclick="window.open('https://jimmiandersson89-max.github.io/Priskalkylator/','_blank')" class="btn">Visa nu</button>
         <button id="promo-close" class="btn" style="margin-left:8px;">Stäng</button>
       </div>
     </div>
@@ -641,7 +634,7 @@
       let added=0, updated=0;
       for (const r of rows){
         let it = r.id ? items.find(x=>x.id===r.id) : null;
-        if (!it och r.code) it = items.find(x=>x.code===r.code);
+        if (!it && r.code) it = items.find(x=>x.code===r.code);
         if (it){
           it.code = r.code || it.code;
           it.name = r.name || it.name;
