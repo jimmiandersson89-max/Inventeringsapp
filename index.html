@@ -6,15 +6,15 @@
   <title>Offert På Språng – Inventeringsapp</title>
 
   <!-- PWA -->
-  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#111418" />
-  <link rel="icon" href="./Icon-512.png" sizes="512x512">
-  <link rel="icon" href="./Icon-512.png" sizes="192x192">
+  <link rel="icon" href="Icon-512.png" sizes="512x512">
+  <link rel="icon" href="Icon-512.png" sizes="192x192">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Inventeringsapp">
-  <link rel="apple-touch-icon" href="./Icon-512.png" />
+  <link rel="apple-touch-icon" href="Icon-512.png" />
 
-  <!-- Quagga (global Quagga-variabel, funkar i Safari) -->
+  <!-- Quagga (barcode scanner) -->
   <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
   <!-- jsPDF + autoTable -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -23,7 +23,7 @@
   <style>
     :root{
       --bg:#0f1115; --card:#1b2230; --muted:#c5cedb; --text:#ffffff; --line:#2a3242;
-      --accent:#22d3ee; --ok:#16a34a; --bad:#ef4444; --banner:#0f1a0f; --banner-border:#1c3b1c;
+      --accent:#22d3ee; --ok:#16a34a; --bad:#ef4444;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -53,75 +53,32 @@
     .hint{color:var(--muted);font-size:12px}
     .badge{display:inline-block;padding:2px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--muted)}
     .img-thumb{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#0b0f17}
-    details{border:1px dashed var(--line);border-radius:10px;padding:8px 10px}
-    summary{cursor:pointer;color:var(--muted)}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
     .nowrap{white-space:nowrap}
     .right{margin-left:auto}
     .small{font-size:12px}
     .center{text-align:center}
 
-    /* Banner */
-    .promo { position:fixed; left:0; right:0; bottom:0; z-index:20;
-      background:var(--banner); border-top:1px solid var(--banner-border); }
-    .promo-inner { max-width:1100px; margin:0 auto; padding:10px 16px;
-      display:flex; align-items:center; gap:12px; }
-    .promo .logo-dot {width:10px; height:10px; border-radius:50%; background:#32d16d; flex:0 0 auto;}
-    .promo a {color:#b8ffcb; text-decoration:underline;}
-    .promo .cta {margin-left:auto}
-    .cta button{background:#1d3b24;border-color:#2b6c3e}
-
-    /* Skannerruta */
-    #scan-box { width:100%; height:60vh; position:relative; overflow:hidden; background:#000; border-radius:10px }
-    #scan-box canvas, #scan-box video { max-width:100%; width:100%; }
-
-    /* ===== Mobilförbättringar ===== */
+    /* Mobilförbättringar */
     @media (max-width: 520px){
       .wrap{ padding:12px 12px 96px; }
       header{ padding:12px 14px; }
       header h1{ font-size:16px; }
       .card{ padding:12px; border-radius:10px; }
-
-      .toolbar-stick{
-        position: sticky; top: 56px; z-index: 15;
-        background: rgba(15,17,21,.85); backdrop-filter: blur(6px);
-        border: 1px solid var(--line); border-radius: 12px; padding: 10px;
-      }
       .toolbar{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
       .toolbar > *{ width:100%; }
       button,.btn{ padding:12px 14px; border-radius:12px; font-size:15px; }
-
-      .grid-3{ grid-template-columns: 1fr; gap:10px; }
-      .grid-2{ grid-template-columns: 1fr; gap:10px; }
+      .grid-3,.grid-2{ grid-template-columns:1fr; gap:10px; }
       label{ font-size:11px; }
       input,select,textarea{ padding:12px; font-size:15px; }
-
       table thead{ display:none; }
       table, tbody{ display:block; }
-      tbody tr{
-        display:block; background:var(--card); border:1px solid var(--line);
-        border-radius:12px; padding:10px; margin-bottom:12px;
-      }
-      tbody td{
-        display:grid; grid-template-columns:110px 1fr; gap:8px;
-        padding:6px 0; border:none; align-items:center;
-      }
-      tbody td::before{
-        content: attr(data-label); color: var(--muted); font-size:12px;
-      }
+      tbody tr{ display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px; margin-bottom:12px; }
+      tbody td{ display:grid; grid-template-columns:110px 1fr; gap:8px; padding:6px 0; border:none; align-items:center; }
+      tbody td::before{ content: attr(data-label); color: var(--muted); font-size:12px; }
       tbody td:first-child{ grid-template-columns:80px 1fr; }
       .img-thumb{ width:72px; height:72px; }
-
-      .actions{ justify-content:flex-start; }
       .nowrap{ white-space:normal; }
-
-      .promo .promo-inner{
-        flex-direction:column; align-items:stretch; text-align:center;
-        gap:8px; padding:10px 12px;
-      }
-      .promo .small{ font-size:13px; line-height:1.35; }
-      .promo .cta{ margin-left:0; }
-      .promo .cta .btn{ width:100%; padding:12px; }
     }
   </style>
 </head>
@@ -130,22 +87,21 @@
     <h1>📦 Offert På Språng – Inventeringsapp</h1>
   </header>
 
-  <!-- Sticky knapprad -->
   <div class="wrap">
-    <div class="row toolbar-stick">
+    <!-- Knappar -->
+    <div class="row">
       <div class="toolbar">
         <button id="btn-scan" class="btn-accent">📷 Skanna streckkod</button>
         <button id="btn-add" class="btn-primary">➕ Lägg till manuellt</button>
-
         <input id="file-import" type="file" accept=".csv,text/csv" style="display:none">
         <button id="btn-import">⬆️ Importera CSV</button>
-
         <button id="btn-export">⬇️ Exportera CSV</button>
         <button id="btn-export-pdf">🧾 Exportera PDF</button>
         <button id="btn-clear" class="btn-danger">🗑️ Rensa allt</button>
       </div>
     </div>
 
+    <!-- Filter -->
     <div class="row card">
       <div class="grid-3">
         <div>
@@ -164,39 +120,16 @@
       <div class="hint">All data sparas lokalt i din webbläsare (offline-stöd). Exportera vid behov.</div>
     </div>
 
+    <!-- Tabell -->
     <div class="row card">
       <table id="table">
         <thead>
-          <tr>
-            <th>Bild</th><th>Kod</th><th>Namn</th><th>Antal</th><th>Plats</th><th>Notering</th><th class="nowrap">Åtgärder</th>
-          </tr>
+          <tr><th>Bild</th><th>Kod</th><th>Namn</th><th>Antal</th><th>Plats</th><th>Notering</th><th class="nowrap">Åtgärder</th></tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
-      <div id="empty" class="center hint" style="display:none;padding:12px;">Inga artiklar ännu. Skanna, importera eller lägg till manuellt.</div>
-    </div>
-
-    <details class="row">
-      <summary>ℹ️ Tips & behörigheter</summary>
-      <div class="card" style="margin-top:8px">
-        • På iPhone/iPad krävs <b>https</b> (github.io har det).<br>
-        • Ge webbläsaren <b>Kamera-tillstånd</b> (lås-ikonen i adressfältet).<br>
-        • Om kameran vägrar starta: bumpa service worker-version, stäng alla flikar, öppna igen med <code>?v=8</code>.
-      </div>
-    </details>
-  </div>
-
-  <!-- Banner (stängbar) -->
-  <div class="promo">
-    <div class="promo-inner">
-      <div class="logo-dot"></div>
-      <div class="small">
-        Behöver du även skapa proffsiga offerter? <strong>Offert På Språng</strong> hjälper dig att skicka offert-PDF:er på några sekunder.
-        Testa systerappen här: <a href="https://jimmiandersson89-max.github.io/Priskalkylator/" target="_blank" rel="noopener">Öppna</a>
-      </div>
-      <div class="cta">
-        <button onclick="window.open('https://jimmiandersson89-max.github.io/Priskalkylator/','_blank')" class="btn">Visa nu</button>
-        <button id="promo-close" class="btn" style="margin-left:8px;">Stäng</button>
+      <div id="empty" class="center hint" style="display:none;padding:12px;">
+        Inga artiklar ännu. Skanna, importera eller lägg till manuellt.
       </div>
     </div>
   </div>
@@ -647,7 +580,7 @@
       let added=0, updated=0;
       for (const r of rows){
         let it = r.id ? items.find(x=>x.id===r.id) : null;
-        if (!it && r.code) it = items.find(x=>x.code===r.code);
+        if (!it och r.code) it = items.find(x=>x.code===r.code);
         if (it){
           it.code = r.code || it.code;
           it.name = r.name || it.name;
@@ -690,24 +623,7 @@
       fileImport.value = '';
     });
 
-    // ---------- Stängbar banner ----------
-    (function(){
-      const PROMO_KEY = 'promo_dismissed_v1';
-      const promo = document.querySelector('.promo');
-      if (!promo) return;
-      if (localStorage.getItem(PROMO_KEY) === '1'){
-        promo.remove(); return;
-      }
-      const btn = document.getElementById('promo-close');
-      if (btn){
-        btn.addEventListener('click', ()=>{
-          localStorage.setItem(PROMO_KEY, '1');
-          promo.remove();
-        });
-      }
-    })();
-
-    // ---------- PWA ----------
+    // ---------- PWA (SW) ----------
     if ('serviceWorker' in navigator){
       window.addEventListener('load', ()=> {
         navigator.serviceWorker.register('./service-worker.js').catch(console.error);
