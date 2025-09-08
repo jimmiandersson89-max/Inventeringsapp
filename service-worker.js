@@ -1,5 +1,5 @@
 // Cache-first SW (bumpa version när du ändrar index)
-const CACHE_NAME = 'inventering-v15';
+const CACHE_NAME = 'inventering-v16';
 const ASSETS = [
   './',
   './index.html',
