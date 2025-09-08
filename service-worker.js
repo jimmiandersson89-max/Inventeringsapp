@@ -5,7 +5,7 @@ const ASSETS = [
   './index.html',
   './manifest.webmanifest',
   './service-worker.js',
-  './icon-512.png' // filnamnet i din repo är gemener: "icon-512.png"
+  './Icon-512.png' // filnamnet i din repo är gemener: "icon-512.png"
 ];
 
 // Installera och cacha baskällor
